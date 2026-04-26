@@ -179,9 +179,11 @@ function productCharacters(p) {
 
 function hasSharedCharacter(a, b) {
   const aa = new Set(Array.isArray(a) ? a : productCharacters(a));
-  const bb = Array.isArray(b) ? b : productCharacters(b);
+  const bb = Array.isArray(b) ? b : productCharacters(b));
   return Array.from(bb).some((x) => aa.has(x));
 }
+
+
 
 function productMatchesPreferredChars(p, pref1, pref2) {
   const chars = productCharacters(p);
@@ -190,10 +192,6 @@ function productMatchesPreferredChars(p, pref1, pref2) {
   return c1Ok && c2Ok;
 }
 
-function hasSharedCharacter(charList, p) {
-  const set = new Set(charList || []);
-  return productCharacters(p).some((c) => set.has(c));
-}
 
 function compactText(v, max = 42) {
   const s = String(v || "");
