@@ -1271,3 +1271,55 @@ body {
 /* 랜덤스쿱 캐릭터 선택 버튼이 가려지지 않도록 */
 .scoopTop, .scoopRightPanel { overflow: visible !important; }
 .scoopTop .multiBtn, .scoopRightPanel .multiBtn { display: inline-flex !important; min-width: 120px; }
+
+
+/* v30: 모바일도 데스크톱 웹 그대로 */
+html, body, #root {
+  min-width: 1280px !important;
+}
+body {
+  overflow-x: auto !important;
+}
+.app {
+  min-width: 1280px !important;
+}
+
+/* 랜덤스쿱 선호 캐릭터 선택 영역 */
+.scoopPrefBox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  border: 1px solid #d6c15c;
+  background: #fff8d8;
+  vertical-align: middle;
+}
+
+.scoopPrefBox .smallLabel {
+  font-weight: 900;
+  color: #5a4300;
+  white-space: nowrap;
+}
+
+.scoopPrefBox button {
+  height: 24px;
+  padding: 2px 8px;
+}
+
+@media (max-width: 760px) {
+  html, body, #root, .app {
+    min-width: 1280px !important;
+  }
+  .splitLayout,
+  .scoopOriginalGrid,
+  .ordersGrid {
+    display: grid !important;
+  }
+  table {
+    table-layout: auto !important;
+  }
+  button, input, select {
+    width: auto !important;
+    max-width: none !important;
+  }
+}
