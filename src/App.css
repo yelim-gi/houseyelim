@@ -1323,3 +1323,13 @@ body {
     max-width: none !important;
   }
 }
+
+
+/* v33: 저장 그룹 삭제 버튼 */
+.scoopTop .deleteBtn,
+.scoopOriginalGrid .deleteBtn {
+  background: #ffd6d6 !important;
+  border-color: #d88 !important;
+  color: #7a0000 !important;
+  font-weight: 900 !important;
+}

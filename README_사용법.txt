@@ -45,3 +45,10 @@ v31: 빌드 오류 원인이던 중복 함수(productCharacters/hasSharedCharact
 
 
 v32: hasSharedCharacter 함수의 괄호 오타로 인한 빌드 오류를 수정했습니다.
+
+
+v33 수정:
+- 랜덤스쿱 저장 그룹 삭제 기능을 확실히 수정
+- 저장 그룹 삭제 버튼 클릭 시 저장된 그룹 목록을 번호로 보여줌
+- 삭제할 번호 선택 후 확인하면 Supabase saved_scoop_groups에서 삭제
+- ID를 직접 몰라도 삭제 가능

@@ -2268,14 +2268,54 @@ export default function App() {
   }
 
 
-  async function deleteSavedScoopGroup(groupId) {
-    if (!groupId) return alert("삭제할 저장 그룹을 선택해줘.");
-    if (!window.confirm("저장된 그룹을 삭제할까요? 삭제 후 되돌릴 수 없어요.")) return;
-    const { error } = await supabase.from("saved_scoop_groups").delete().eq("id", groupId);
-    if (error) return alert("저장 그룹 삭제 실패: " + error.message);
-    alert("저장된 그룹을 삭제했어요.");
-    getSavedScoopGroups?.();
-    loadSavedScoopGroups?.();
+  async function deleteSavedScoopGroupByPicker() {
+    const { data, error } = await supabase
+      .from("saved_scoop_groups")
+      .select("*")
+      .order("id", { ascending: false });
+
+    if (error) return alert("저장 그룹 목록 불러오기 실패: " + error.message);
+    if (!data || data.length === 0) return alert("삭제할 저장 그룹이 없어요.");
+
+    const listText = data.map((g, idx) => {
+      const title = g.name || g.title || g.group_name || `저장그룹 ${g.id}`;
+      const date = String(g.created_at || "").slice(0, 10);
+      return `${idx + 1}. ID ${g.id} | ${title}${date ? " | " + date : ""}`;
+    }).join("\n");
+
+    const pick = window.prompt(
+      "삭제할 저장 그룹 번호를 입력해줘.\n\n" +
+      listText +
+      "\n\n예: 1"
+    );
+
+    if (!pick) return;
+
+    const idx = Number(pick) - 1;
+    if (Number.isNaN(idx) || idx < 0 || idx >= data.length) {
+      alert("번호가 올바르지 않아요.");
+      return;
+    }
+
+    const target = data[idx];
+    const title = target.name || target.title || target.group_name || `저장그룹 ${target.id}`;
+
+    const ok = window.confirm(
+      `저장 그룹을 삭제할까요?\n\n` +
+      `ID: ${target.id}\n` +
+      `이름: ${title}\n\n` +
+      "삭제 후 되돌릴 수 없어요."
+    );
+    if (!ok) return;
+
+    const { error: delError } = await supabase
+      .from("saved_scoop_groups")
+      .delete()
+      .eq("id", target.id);
+
+    if (delError) return alert("저장 그룹 삭제 실패: " + delError.message);
+
+    alert("저장 그룹 삭제 완료!");
   }
 
   function ScoopPage() {
