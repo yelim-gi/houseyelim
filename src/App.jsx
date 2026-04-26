@@ -248,6 +248,7 @@ function MultiCheckFilter({ label, options, selected, setSelected }) {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("대시보드");
+  const [mobileManualLeftOpen, setMobileManualLeftOpen] = useState(true);
 
   const [authUser, setAuthUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -2119,7 +2120,7 @@ export default function App() {
         <section className="panel"><FilterBox /></section>
         <section className="splitLayout">
           <div className="panel">
-            <h2>조건 상품 리스트</h2>
+            <div className="mobileSectionHeader"><h2>조건 상품 리스트</h2><button className="mobileOnlyToggle" onClick={() => setMobileManualLeftOpen(!mobileManualLeftOpen)}>{mobileManualLeftOpen ? "접기" : "펴기"}</button></div>
             <ProductTable mode="compose" />
           </div>
           <div className="panel">
