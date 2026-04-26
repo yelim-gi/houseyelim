@@ -179,7 +179,7 @@ function productCharacters(p) {
 
 function hasSharedCharacter(a, b) {
   const aa = new Set(Array.isArray(a) ? a : productCharacters(a));
-  const bb = Array.isArray(b) ? b : productCharacters(b));
+  const bb = Array.isArray(b) ? b : productCharacters(b);
   return Array.from(bb).some((x) => aa.has(x));
 }
 

@@ -42,3 +42,6 @@ v30 수정:
 
 
 v31: 빌드 오류 원인이던 중복 함수(productCharacters/hasSharedCharacter 등)를 제거했습니다.
+
+
+v32: hasSharedCharacter 함수의 괄호 오타로 인한 빌드 오류를 수정했습니다.
