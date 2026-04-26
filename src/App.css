@@ -1226,284 +1226,82 @@ button:disabled {
 }
 
 
-/* v26: 모바일 공간 절약 + 표/버튼 최적화 */
-.mobileOnlyToggle {
-  display: none;
+/* v28: 모바일도 데스크톱 웹 화면 그대로 보이게 */
+html, body, #root {
+  min-width: 1280px;
 }
 
-.mobileSectionHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin: 0 0 4px 0;
+body {
+  overflow-x: auto !important;
 }
 
-.mobileSectionHeader h2,
-.mobileSectionHeader h3 {
-  margin: 0 !important;
+.app {
+  min-width: 1280px;
 }
 
-.checkLine {
+/* 모바일 전용으로 접고 펴기/압축했던 UI는 사용하지 않음 */
+.mobileOnlyToggle,
+.manualProductToggleBtn {
+  display: none !important;
+}
+
+.manualMobileHidden {
+  display: block !important;
+}
+
+/* 랜덤스쿱 추천 전 캐릭터 선택 버튼이 항상 보이도록 */
+.scoopTop .multiBtn,
+.scoopRightPanel .multiBtn {
   display: inline-flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  white-space: nowrap !important;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
 }
 
-.checkLine input[type="checkbox"] {
-  width: 14px !important;
-  height: 14px !important;
-  margin: 0 !important;
-  flex: 0 0 auto !important;
+/* 랜덤스쿱 추천안 설명/구분 칸 */
+.scoopRightPanel .recommendationTable td:last-child {
+  white-space: normal !important;
+  line-height: 1.25;
+}
+
+.scoopRightPanel .recItems td:nth-child(4) {
+  font-weight: 900;
+  color: #6a4a00;
 }
 
 @media (max-width: 760px) {
-  .app {
-    padding: 4px !important;
+  html, body, #root, .app {
+    min-width: 1280px !important;
   }
 
-  .header {
-    padding: 6px 8px !important;
-    margin-bottom: 5px !important;
-  }
-
-  .header h1 {
-    font-size: 16px !important;
-    line-height: 1.15 !important;
+  .splitLayout,
+  .scoopOriginalGrid,
+  .ordersGrid {
+    display: grid !important;
   }
 
   .tabs {
-    gap: 3px !important;
-    padding: 2px 0 5px !important;
-  }
-
-  .tab {
-    min-width: auto !important;
-    width: auto !important;
-    padding: 0 9px !important;
-    height: 30px !important;
-    font-size: 11px !important;
-    flex: 0 0 auto !important;
-  }
-
-  .panel,
-  .subPanel,
-  .orderBox {
-    padding: 6px !important;
-    margin-bottom: 7px !important;
-  }
-
-  .panel h2,
-  .subPanel h2 {
-    font-size: 15px !important;
-    margin: 2px 0 6px !important;
-  }
-
-  .panel h3,
-  .subPanel h3 {
-    font-size: 13px !important;
-    margin: 4px 0 !important;
-  }
-
-  .filterRow,
-  .buttonRow,
-  .topControls {
     display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 4px !important;
-    align-items: center !important;
-    margin: 3px 0 !important;
-  }
-
-  .filterRow label {
-    font-size: 10px !important;
-    margin-right: 2px !important;
-    white-space: nowrap !important;
-  }
-
-  input,
-  select {
-    height: 26px !important;
-    min-height: 26px !important;
-    padding: 2px 5px !important;
-    font-size: 11px !important;
-    width: auto !important;
-    min-width: 70px !important;
-    max-width: 155px !important;
-  }
-
-  button,
-  .uploadBtn {
-    width: auto !important;
-    min-width: 0 !important;
-    height: 26px !important;
-    min-height: 26px !important;
-    padding: 2px 7px !important;
-    font-size: 10.5px !important;
-    line-height: 1.1 !important;
-    white-space: nowrap !important;
-  }
-
-  .checkLine {
-    gap: 3px !important;
-    font-size: 11px !important;
-    padding: 0 2px !important;
-  }
-
-  .checkLine input[type="checkbox"] {
-    width: 13px !important;
-    height: 13px !important;
-  }
-
-  /* 수동박스 조건 상품 리스트 모바일 접기/펴기 */
-  .mobileOnlyToggle {
-    display: inline-flex !important;
-    align-items: center;
-    justify-content: center;
-    height: 24px !important;
-    padding: 2px 10px !important;
-    font-size: 11px !important;
-  }
-
-  .manualLeftPanel.mobileCollapsed > *:not(.mobileSectionHeader) {
-    display: none !important;
-  }
-
-  .manualLeftPanel.mobileCollapsed {
-    min-height: 0 !important;
-    height: auto !important;
-  }
-
-  .manualLeftPanel .tableWrap,
-  .manualLeftPanel .listBox,
-  .manualLeftPanel .recommendationTable {
-    max-height: 340px !important;
-  }
-
-  /* 카테고리/필터 영역이 한 화면에 덜 밀리도록 */
-  .scoopOriginalGrid,
-  .splitLayout,
-  .ordersGrid {
-    display: block !important;
-  }
-
-  .scoopOriginalGrid .panel,
-  .splitLayout .panel {
-    width: 100% !important;
-  }
-
-  /* 표 압축: 최대한 한 번에 보이게 */
-  .tableWrap,
-  .recommendationTable,
-  .recItems {
-    overflow: auto !important;
-    max-height: 420px !important;
+    overflow: visible !important;
   }
 
   table {
-    width: 100% !important;
-    min-width: 0 !important;
-    table-layout: fixed !important;
-    border-collapse: collapse !important;
+    min-width: unset !important;
+    table-layout: auto !important;
   }
 
-  th,
-  td {
-    font-size: 9.5px !important;
-    padding: 3px 2px !important;
-    line-height: 1.18 !important;
+  th, td {
+    font-size: inherit !important;
+    padding: 4px 6px !important;
     white-space: normal !important;
-    word-break: keep-all !important;
-    overflow-wrap: anywhere !important;
-  }
-
-  th {
-    font-size: 9.5px !important;
-  }
-
-  /* 긴 설명/검증칸은 너무 크게 밀지 않게 */
-  td[title],
-  .recommendationTable td,
-  .recItems td {
-    max-height: 46px !important;
-    overflow: hidden !important;
-  }
-
-  .recommendationTable td:last-child,
-  .recommendationTable td:nth-last-child(2) {
-    max-height: 58px !important;
-    overflow-y: auto !important;
-  }
-
-  /* 모바일에서 중요하지 않은 열 일부 축소 */
-  th:nth-child(1),
-  td:nth-child(1) {
-    width: 38px !important;
-  }
-
-  th:last-child,
-  td:last-child {
-    width: auto !important;
-  }
-
-  .statusLine,
-  .validationLine {
-    font-size: 10px !important;
-    padding: 3px 4px !important;
-    line-height: 1.25 !important;
-    margin: 2px 0 !important;
-  }
-
-  /* 주문관리/취소보관함 표도 더 촘촘하게 */
-  .trashTable,
-  .orderBox .tableWrap {
-    max-height: 430px !important;
-  }
-
-  /* 로그인 박스도 모바일에서 너무 크게 안 보이게 */
-  .authBox {
-    width: 300px !important;
-    padding: 14px !important;
-  }
-
-  .authBox h1 {
-    font-size: 15px !important;
-  }
-
-  .authBox input {
-    width: 100% !important;
-    max-width: none !important;
-    font-size: 14px !important;
-  }
-
-  .authBox button {
-    width: 100% !important;
-  }
-}
-
-/* 아주 작은 화면용 추가 압축 */
-@media (max-width: 420px) {
-  th,
-  td {
-    font-size: 8.7px !important;
-    padding: 2px 1px !important;
   }
 
   button,
-  .uploadBtn {
-    font-size: 9.5px !important;
-    padding: 2px 5px !important;
-  }
-
   input,
-  select {
-    font-size: 10px !important;
-    max-width: 135px !important;
-  }
-
-  .tab {
-    font-size: 10px !important;
-    padding: 0 7px !important;
+  select,
+  .uploadBtn {
+    width: auto !important;
+    max-width: none !important;
+    font-size: inherit !important;
   }
 }

@@ -173,6 +173,27 @@ function findClosestRetailProduct(pool, gap, usedIds = new Set()) {
     .sort((a, b) => Math.abs(toInt(a.retail) - gap) - Math.abs(toInt(b.retail) - gap))[0];
 }
 
+
+function productCharacters(p) {
+  return [...splitMultiValues(p.char1), ...splitMultiValues(p.char2)].filter(Boolean);
+}
+
+function hasSharedCharacter(a, b) {
+  const aa = new Set(Array.isArray(a) ? a : productCharacters(a));
+  const bb = Array.isArray(b) ? b : productCharacters(b);
+  return bb.some((x) => aa.has(x));
+}
+
+function pickClosestProduct(pool, targetRetail, usedIds = new Set()) {
+  return pool
+    .filter((p) => !usedIds.has(p.id))
+    .sort((a, b) => {
+      const aScore = Math.abs(toInt(a.retail) - targetRetail) - Math.min(toInt(a.stock), 10) * 15;
+      const bScore = Math.abs(toInt(b.retail) - targetRetail) - Math.min(toInt(b.stock), 10) * 15;
+      return aScore - bScore;
+    })[0];
+}
+
 function compactText(v, max = 42) {
   const s = String(v || "");
   return s.length > max ? s.slice(0, max) + "…" : s;
@@ -248,7 +269,6 @@ function MultiCheckFilter({ label, options, selected, setSelected }) {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("대시보드");
-  const [mobileManualLeftOpen, setMobileManualLeftOpen] = useState(true);
 
   const [authUser, setAuthUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -328,6 +348,7 @@ export default function App() {
   const [scoopRecType, setScoopRecType] = useState("전체 보기");
   const [scoopRecSort, setScoopRecSort] = useState("추천순");
   const [scoopSelectedCategories, setScoopSelectedCategories] = useState([]);
+  const [scoopGapScope, setScoopGapScope] = useState("same");
   const [selectedOrderItems, setSelectedOrderItems] = useState([]);
 
   useEffect(() => {
@@ -1773,8 +1794,85 @@ export default function App() {
     }
   }
 
+  function buildScoopItemsByMode(mode, allPool) {
+    let items = [];
+    const used = new Set();
+
+    scoopGroups.forEach((g) => {
+      let pool = [...(g.products || [])].filter((p) => toInt(p.stock) > 0 && !used.has(p.id));
+
+      if (scoopMode === "소비자가 균등") pool.sort((a, b) => toInt(b.retail) - toInt(a.retail));
+      else if (scoopMode === "도매가 균등") pool.sort((a, b) => toInt(a.wholesale) - toInt(b.wholesale));
+      else if (scoopMode === "혼합 균형") pool.sort((a, b) => (toInt(b.retail) - toInt(b.wholesale)) - (toInt(a.retail) - toInt(a.wholesale)));
+      else pool.sort(() => 0.5 - Math.random());
+
+      const qty = Math.max(1, toInt(g.partQty || 1));
+      const picked = pool.slice(0, qty);
+      picked.forEach((p) => used.add(p.id));
+
+      if (mode === "기본" || qty <= 1) {
+        picked.forEach((p) => items.push({ ...p, _groupName: g.name, _tag: "기본" }));
+        return;
+      }
+
+      if (mode === "전체 업그레이드") {
+        const target = picked.reduce((s, p) => s + toInt(p.retail), 0);
+        const upgradePool = allPool.filter((p) => {
+          if (used.has(p.id)) return false;
+          if ((g.categories || []).length && !(g.categories || []).includes(p.category || "미분류")) return false;
+          return toInt(p.retail) >= Math.max(1, Math.round(target * 0.75));
+        });
+        const upgrade = pickClosestProduct(upgradePool, target, used);
+        if (upgrade) {
+          used.add(upgrade.id);
+          items.push({ ...upgrade, _groupName: g.name, _tag: `전체 업그레이드(${qty}→1)` });
+        } else {
+          picked.forEach((p) => items.push({ ...p, _groupName: g.name, _tag: "기본" }));
+        }
+        return;
+      }
+
+      if (mode === "부분 업그레이드") {
+        let rest = [...picked];
+        while (rest.length >= 2) {
+          const pair = rest.splice(0, 2);
+          const target = pair.reduce((s, p) => s + toInt(p.retail), 0);
+          const upgradePool = allPool.filter((p) => {
+            if (used.has(p.id)) return false;
+            if ((g.categories || []).length && !(g.categories || []).includes(p.category || "미분류")) return false;
+            return toInt(p.retail) >= Math.max(1, Math.round(target * 0.7));
+          });
+          const upgrade = pickClosestProduct(upgradePool, target, used);
+          if (upgrade) {
+            used.add(upgrade.id);
+            items.push({ ...upgrade, _groupName: g.name, _tag: "부분 업그레이드(2→1)" });
+          } else {
+            pair.forEach((p) => items.push({ ...p, _groupName: g.name, _tag: "기본" }));
+          }
+        }
+        rest.forEach((p) => items.push({ ...p, _groupName: g.name, _tag: "기본" }));
+      }
+    });
+
+    return items;
+  }
+
   function generateScoopRecommendations() {
     if (scoopGroups.length === 0) return alert("먼저 그룹을 만들어줘.");
+
+    const lowChars = [...scoopChar1Selected, ...scoopChar2Selected].map((char) => {
+      const stock = scoopCandidateProducts().filter((p) => productCharacters(p).includes(char)).reduce((s, p) => s + toInt(p.stock), 0);
+      return { char, stock };
+    }).filter((x) => x.stock > 0 && x.stock <= 3);
+
+    if (lowChars.length > 0) {
+      const ok = window.confirm(
+        "선택한 캐릭터 중 재고가 적어서 아껴야 할 수 있는 캐릭터가 있어요.\n\n" +
+        lowChars.map((x) => `${x.char}: 재고 ${x.stock}개`).join("\n") +
+        "\n\n그래도 이 조건으로 추천안을 만들까요?"
+      );
+      if (!ok) return;
+    }
 
     const sale = toInt(salePrice || defaultSale);
     const fee = Number(feeRate || defaultFee || 0);
@@ -1782,114 +1880,50 @@ export default function App() {
     const minMargin = targetMargin;
     const maxMargin = targetMargin + 5;
     const allPool = scoopCandidateProducts();
+
+    const modeList =
+      scoopRecType === "기본만" ? ["기본"] :
+      scoopRecType === "부분 업그레이드만" ? ["부분 업그레이드"] :
+      scoopRecType === "전체 업그레이드만" ? ["전체 업그레이드"] :
+      ["기본", "부분 업그레이드", "전체 업그레이드"];
+
     const recs = [];
+    const signatures = new Set();
     let attempts = 0;
 
-    while (recs.length < 12 && attempts < 600) {
+    while (recs.length < 12 && attempts < 800) {
       attempts += 1;
-      let items = [];
-      const used = new Set();
-      let type = "기본";
+      for (const mode of modeList) {
+        let items = buildScoopItemsByMode(mode, allPool);
+        const used = new Set(items.map((p) => p.id));
+        let fin = calcFinance(items, sale, fee);
+        let note = mode === "기본" ? "파츠 수 그대로" : mode === "전체 업그레이드" ? "중복 파츠 그룹 전체 묶음 업그레이드" : "중복 파츠 일부 묶음 업그레이드";
 
-      scoopGroups.forEach((g) => {
-        let pool = [...(g.products || [])].filter((p) => toInt(p.stock) > 0 && !used.has(p.id));
-        if (scoopMode === "소비자가 균등") pool.sort((a, b) => toInt(b.retail) - toInt(a.retail));
-        else if (scoopMode === "도매가 균등") pool.sort((a, b) => toInt(a.wholesale) - toInt(b.wholesale));
-        else if (scoopMode === "혼합 균형") pool.sort((a, b) => (toInt(b.retail) - toInt(b.wholesale)) - (toInt(a.retail) - toInt(a.wholesale)));
-        else pool.sort(() => 0.5 - Math.random());
-
-        const qty = Math.max(1, toInt(g.partQty || 1));
-        pool.slice(0, qty).forEach((p) => {
-          if (!used.has(p.id)) {
-            items.push({ ...p, _groupName: g.name, _tag: "기본" });
-            used.add(p.id);
-          }
-        });
-      });
-
-      let fin = calcFinance(items, sale, fee);
-
-      let guard = 0;
-      while (fin.retailSum < sale && guard < 30) {
-        const gap = sale - fin.retailSum;
-        const add = findClosestRetailProduct(allPool, gap, used);
-        if (!add) break;
-        items.push({ ...add, _tag: "소비자가 보정" });
-        used.add(add.id);
-        fin = calcFinance(items, sale, fee);
-        type = "부분 업그레이드";
-        guard += 1;
-      }
-
-      guard = 0;
-      while (fin.margin > maxMargin && guard < 40) {
-        const candidates = items
-          .map((p, idx) => ({ p, idx }))
-          .sort((a, b) => toInt(a.p.wholesale) - toInt(b.p.wholesale));
-
-        let replaced = false;
-        for (const { p: oldItem, idx } of candidates) {
-          const replacement = allPool
-            .filter((p) => !items.some((x, j) => j !== idx && x.id === p.id))
-            .filter((p) => toInt(p.wholesale) > toInt(oldItem.wholesale))
-            .sort((a, b) => {
-              const aFin = calcFinance([...items.slice(0, idx), { ...a, _tag: "마진상한보정" }, ...items.slice(idx + 1)], sale, fee);
-              const bFin = calcFinance([...items.slice(0, idx), { ...b, _tag: "마진상한보정" }, ...items.slice(idx + 1)], sale, fee);
-              return Math.abs(aFin.margin - targetMargin) - Math.abs(bFin.margin - targetMargin);
-            })[0];
-
-          if (replacement) {
-            items[idx] = { ...replacement, _tag: "마진상한보정" };
-            fin = calcFinance(items, sale, fee);
-            type = "부분 업그레이드";
-            replaced = true;
-            break;
-          }
+        let guard = 0;
+        while (fin.retailSum < sale && guard < 30) {
+          const gap = sale - fin.retailSum;
+          const add = findClosestRetailProduct(allPool, gap, used);
+          if (!add) break;
+          items.push({ ...add, _tag: "부족금액 보정" });
+          used.add(add.id);
+          fin = calcFinance(items, sale, fee);
+          guard += 1;
         }
-        if (!replaced) break;
-        guard += 1;
-      }
 
-      guard = 0;
-      while (fin.margin < minMargin && guard < 40) {
-        const candidates = items
-          .map((p, idx) => ({ p, idx }))
-          .sort((a, b) => toInt(b.p.wholesale) - toInt(a.p.wholesale));
+        const sig = items.map((p) => p.id).sort((a, b) => a - b).join("-");
+        if (signatures.has(sig)) continue;
 
-        let replaced = false;
-        for (const { p: oldItem, idx } of candidates) {
-          const replacement = allPool
-            .filter((p) => !items.some((x, j) => j !== idx && x.id === p.id))
-            .filter((p) => toInt(p.wholesale) < toInt(oldItem.wholesale))
-            .sort((a, b) => {
-              const aFin = calcFinance([...items.slice(0, idx), { ...a, _tag: "마진하한보정" }, ...items.slice(idx + 1)], sale, fee);
-              const bFin = calcFinance([...items.slice(0, idx), { ...b, _tag: "마진하한보정" }, ...items.slice(idx + 1)], sale, fee);
-              return Math.abs(aFin.margin - targetMargin) - Math.abs(bFin.margin - targetMargin);
-            })[0];
+        const chars = Array.from(new Set(items.flatMap((p) => productCharacters(p)))).slice(0, 10).join(", ");
 
-          if (replacement) {
-            items[idx] = { ...replacement, _tag: "마진하한보정" };
-            fin = calcFinance(items, sale, fee);
-            type = "전체 업그레이드";
-            replaced = true;
-            break;
-          }
+        if (fin.retailSum >= sale && fin.margin >= minMargin && fin.margin <= maxMargin) {
+          signatures.add(sig);
+          recs.push({ name: `추천안${recs.length + 1}`, type: mode, items, finance: fin, chars, note });
+          if (recs.length >= 12) break;
         }
-        if (!replaced) break;
-        guard += 1;
-      }
-
-      const chars = Array.from(new Set(items.flatMap((p) => splitMultiValues(p.char2)))).slice(0, 10).join(", ");
-
-      if (fin.retailSum >= sale && isWithinMargin(fin, targetMargin)) {
-        recs.push({ name: `추천안${recs.length + 1}`, type, items, finance: fin, chars });
       }
     }
 
     let out = recs;
-    if (scoopRecType === "기본만") out = recs.filter((r) => r.type === "기본");
-    if (scoopRecType === "부분 업그레이드만") out = recs.filter((r) => r.type === "부분 업그레이드");
-    if (scoopRecType === "전체 업그레이드만") out = recs.filter((r) => r.type === "전체 업그레이드");
 
     if (scoopRecSort === "수량 적은 순") out = [...out].sort((a, b) => a.items.length - b.items.length);
     if (scoopRecSort === "수량 많은 순") out = [...out].sort((a, b) => b.items.length - a.items.length);
@@ -1905,13 +1939,6 @@ export default function App() {
 
     setScoopRecommendations(out);
     setSelectedScoopIndex(0);
-  }
-
-  function sendScoopToCompose() {
-    const rec = scoopRecommendations[selectedScoopIndex];
-    if (!rec) return alert("추천안을 선택해줘.");
-    setComposeItems(rec.items);
-    setActiveTab("수동박스");
   }
 
   function replaceScoopItem(index) {
@@ -1945,12 +1972,22 @@ export default function App() {
   function showScoopGapRecommendations() {
     const rec = scoopRecommendations[selectedScoopIndex];
     if (!rec) return alert("추천안을 선택해줘.");
-    const gap = toInt(salePrice) - rec.finance.retailSum;
-    const pool = scoopCandidateProducts()
-      .filter((p) => !rec.items.some((x) => x.id === p.id))
+    const gap = Math.max(0, toInt(salePrice) - rec.finance.retailSum);
+    const recChars = Array.from(new Set((rec.items || []).flatMap((p) => productCharacters(p))));
+
+    let pool = scoopCandidateProducts()
+      .filter((p) => !rec.items.some((x) => x.id === p.id));
+
+    if (scoopGapScope === "same") {
+      pool = pool.filter((p) => hasSharedCharacter(recChars, p));
+    }
+
+    pool = pool
       .sort((a, b) => Math.abs(toInt(a.retail) - gap) - Math.abs(toInt(b.retail) - gap))
-      .slice(0, 20);
-    alert(pool.length ? pool.map((p) => `${p.name} | 소비자가 ${money(p.retail)} | 도매가 ${money(p.wholesale)}`).join("\n") : "추천할 상품이 없어요.");
+      .slice(0, 30);
+
+    const title = scoopGapScope === "same" ? "같은 캐릭터 상품" : "모든 캐릭터 상품";
+    alert(pool.length ? `[${title}]\n부족금액: ${money(gap)}\n\n` + pool.map((p) => `${p.id}: ${p.name} | ${p.char1}/${p.char2} | 소비자가 ${money(p.retail)} | 도매가 ${money(p.wholesale)}`).join("\n") : "추천할 상품이 없어요.");
   }
 
   async function createOrderFromScoop() {
@@ -2120,7 +2157,7 @@ export default function App() {
         <section className="panel"><FilterBox /></section>
         <section className="splitLayout">
           <div className="panel">
-            <div className="mobileSectionHeader"><h2>조건 상품 리스트</h2><button className="mobileOnlyToggle" onClick={() => setMobileManualLeftOpen(!mobileManualLeftOpen)}>{mobileManualLeftOpen ? "접기" : "펴기"}</button></div>
+            <h2>조건 상품 리스트</h2>
             <ProductTable mode="compose" />
           </div>
           <div className="panel">
@@ -2256,6 +2293,8 @@ export default function App() {
               <label>판매가</label><input value={salePrice} onChange={(e) => setSalePrice(e.target.value)} />
               <label>수수료율</label><input value={feeRate} onChange={(e) => setFeeRate(e.target.value)} />
               <label>목표마진율</label><input value={scoopTargetMargin} onChange={(e) => setScoopTargetMargin(e.target.value)} />
+              <MultiCheckFilter label="선호 캐릭터1" options={char1Options} selected={scoopChar1Selected} setSelected={setScoopChar1Selected} />
+              <MultiCheckFilter label="선호 캐릭터2" options={char2Options} selected={scoopChar2Selected} setSelected={setScoopChar2Selected} />
               <label>추천유형</label><select value={scoopRecType} onChange={(e) => setScoopRecType(e.target.value)}><option>전체 보기</option><option>기본만</option><option>부분 업그레이드만</option><option>전체 업그레이드만</option></select>
               <label>추천순서</label><select value={scoopRecSort} onChange={(e) => setScoopRecSort(e.target.value)}><option>추천순</option><option>수량 적은 순</option><option>수량 많은 순</option><option>마진율 높은 순</option><option>소비자가 높은 순</option></select>
               <button onClick={generateScoopRecommendations}>추천안 생성</button>
@@ -2279,14 +2318,15 @@ export default function App() {
 
             <h3>추천안 목록</h3>
             <div className="tableWrap recommendationTable">
-              <table><thead><tr><th>추천안</th><th>업그레이드</th><th>포함 캐릭터</th><th>총 도매가</th><th>총 소비자가</th><th>수수료</th><th>실수령액</th><th>순이익</th><th>마진율</th></tr></thead><tbody>
-                {scoopRecommendations.map((r, i) => <tr key={i} onClick={() => setSelectedScoopIndex(i)} className={selectedScoopIndex === i ? "selectedRow" : ""}><td>{r.name}</td><td>{r.type}</td><td>{r.chars}</td><td>{money(r.finance.wholesaleSum)}</td><td>{money(r.finance.retailSum)}</td><td>{money(r.finance.feeAmount)}</td><td>{money(r.finance.netAmount)}</td><td>{money(r.finance.profit)}</td><td>{r.finance.margin.toFixed(1)}%</td></tr>)}
-                {scoopRecommendations.length === 0 && <tr><td colSpan="9" className="empty">추천안이 없어요.</td></tr>}
+              <table><thead><tr><th>추천안</th><th>업그레이드</th><th>포함 캐릭터</th><th>총 도매가</th><th>총 소비자가</th><th>수수료</th><th>실수령액</th><th>순이익</th><th>마진율</th><th>설명</th></tr></thead><tbody>
+                {scoopRecommendations.map((r, i) => <tr key={i} onClick={() => setSelectedScoopIndex(i)} className={selectedScoopIndex === i ? "selectedRow" : ""}><td>{r.name}</td><td>{r.type}</td><td>{r.chars}</td><td>{money(r.finance.wholesaleSum)}</td><td>{money(r.finance.retailSum)}</td><td>{money(r.finance.feeAmount)}</td><td>{money(r.finance.netAmount)}</td><td>{money(r.finance.profit)}</td><td>{r.finance.margin.toFixed(1)}%</td><td>{r.note || ""}</td></tr>)}
+                {scoopRecommendations.length === 0 && <tr><td colSpan="10" className="empty">추천안이 없어요.</td></tr>}
               </tbody></table>
             </div>
 
             <h3>추천안 상품 목록 (교체 / 추가·삭제 가능)</h3>
             <div className="buttonRow">
+              <select value={scoopGapScope} onChange={(e) => setScoopGapScope(e.target.value)} title="부족금액 추천 범위"><option value="same">같은 캐릭터 상품만 보기</option><option value="all">모든 캐릭터 보기</option></select>
               <button onClick={showScoopGapRecommendations}>부족 금액 추천 보기</button>
               <input value={scoopCustomer} onChange={(e) => setScoopCustomer(e.target.value)} placeholder="주문자명" />
               <label className="checkLine"><input checked={scoopReorder} onChange={(e) => setScoopReorder(e.target.checked)} type="checkbox" /> 재주문</label>
@@ -2294,9 +2334,9 @@ export default function App() {
               <button onClick={createOrderFromScoop}>박스출고</button>
             </div>
             <div className="tableWrap recItems">
-              <table><thead><tr><th>ID</th><th>상품명</th><th>그룹/카테고리</th><th>도매가</th><th>소비자가</th><th>교체</th><th>삭제</th></tr></thead><tbody>
-                {(selected?.items || []).map((p, i) => <tr key={`${p.id}-${i}`}><td>{p.id}</td><td title={p.name}>{p.name}</td><td>{p.category}</td><td>{money(p.wholesale)}</td><td>{money(p.retail)}</td><td><button onClick={() => replaceScoopItem(i)}>교체</button></td><td><button className="deleteBtn" onClick={() => removeScoopItem(i)}>삭제</button></td></tr>)}
-                {!selected && <tr><td colSpan="7" className="empty">추천안을 선택해줘.</td></tr>}
+              <table><thead><tr><th>ID</th><th>상품명</th><th>그룹/카테고리</th><th>구분</th><th>도매가</th><th>소비자가</th><th>교체</th><th>삭제</th></tr></thead><tbody>
+                {(selected?.items || []).map((p, i) => <tr key={`${p.id}-${i}`}><td>{p.id}</td><td title={p.name}>{p.name}</td><td>{p._groupName || p.category}</td><td>{p._tag || "기본"}</td><td>{money(p.wholesale)}</td><td>{money(p.retail)}</td><td><button onClick={() => replaceScoopItem(i)}>교체</button></td><td><button className="deleteBtn" onClick={() => removeScoopItem(i)}>삭제</button></td></tr>)}
+                {!selected && <tr><td colSpan="8" className="empty">추천안을 선택해줘.</td></tr>}
               </tbody></table>
             </div>
             {selected && <p className="validationLine">{recommendationCheckText(selected, selected.type)}</p>}
