@@ -183,11 +183,6 @@ function hasSharedCharacter(a, b) {
   return Array.from(bb).some((x) => aa.has(x));
 }
 
-
-function productCharacters(p) {
-  return [...splitMultiValues(p.char1), ...splitMultiValues(p.char2)].filter(Boolean);
-}
-
 function productMatchesPreferredChars(p, pref1, pref2) {
   const chars = productCharacters(p);
   const c1Ok = !pref1?.length || splitMultiValues(p.char1).some((x) => pref1.includes(x));
