@@ -1226,20 +1226,15 @@ button:disabled {
 }
 
 
-/* v28: 모바일도 데스크톱 웹 화면 그대로 보이게 */
-html, body, #root {
-  min-width: 1280px;
+/* v29: 모바일에서도 데스크톱 웹 화면 그대로 보이게 하는 안정 버전 */
+html, body, #root, .app {
+  min-width: 1280px !important;
 }
 
 body {
   overflow-x: auto !important;
 }
 
-.app {
-  min-width: 1280px;
-}
-
-/* 모바일 전용으로 접고 펴기/압축했던 UI는 사용하지 않음 */
 .mobileOnlyToggle,
 .manualProductToggleBtn {
   display: none !important;
@@ -1249,59 +1244,30 @@ body {
   display: block !important;
 }
 
-/* 랜덤스쿱 추천 전 캐릭터 선택 버튼이 항상 보이도록 */
-.scoopTop .multiBtn,
-.scoopRightPanel .multiBtn {
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-  min-width: 120px;
-}
-
-/* 랜덤스쿱 추천안 설명/구분 칸 */
-.scoopRightPanel .recommendationTable td:last-child {
-  white-space: normal !important;
-  line-height: 1.25;
-}
-
-.scoopRightPanel .recItems td:nth-child(4) {
-  font-weight: 900;
-  color: #6a4a00;
+/* 기존 모바일 전용 1열/압축 UI를 강제로 무력화 */
+@media (max-width: 900px) {
+  html, body, #root, .app { min-width: 1280px !important; }
+  .splitLayout { display: grid !important; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr) !important; }
+  .scoopOriginalGrid { display: grid !important; grid-template-columns: 0.9fr 1.05fr 1.55fr !important; }
+  .ordersGrid { display: grid !important; grid-template-columns: 1fr 1fr !important; }
+  .filterRow, .buttonRow { display: flex !important; flex-wrap: wrap !important; }
+  input, select, button, .uploadBtn { width: auto !important; max-width: none !important; min-width: auto !important; }
+  table { min-width: unset !important; table-layout: auto !important; }
+  th, td { font-size: inherit !important; padding: 4px 6px !important; }
 }
 
 @media (max-width: 760px) {
-  html, body, #root, .app {
-    min-width: 1280px !important;
-  }
-
-  .splitLayout,
-  .scoopOriginalGrid,
-  .ordersGrid {
-    display: grid !important;
-  }
-
-  .tabs {
-    display: flex !important;
-    overflow: visible !important;
-  }
-
-  table {
-    min-width: unset !important;
-    table-layout: auto !important;
-  }
-
-  th, td {
-    font-size: inherit !important;
-    padding: 4px 6px !important;
-    white-space: normal !important;
-  }
-
-  button,
-  input,
-  select,
-  .uploadBtn {
-    width: auto !important;
-    max-width: none !important;
-    font-size: inherit !important;
-  }
+  html, body, #root, .app { min-width: 1280px !important; }
+  .splitLayout { display: grid !important; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr) !important; }
+  .scoopOriginalGrid { display: grid !important; grid-template-columns: 0.9fr 1.05fr 1.55fr !important; }
+  .ordersGrid { display: grid !important; grid-template-columns: 1fr 1fr !important; }
+  .tabs { display: flex !important; overflow: visible !important; }
+  .tab { width: auto !important; min-width: auto !important; flex: 0 0 auto !important; }
+  .panel, .subPanel, .orderBox { height: auto; }
+  input, select, button, .uploadBtn { width: auto !important; max-width: none !important; min-width: auto !important; font-size: inherit !important; height: auto; }
+  th, td { font-size: inherit !important; padding: 4px 6px !important; white-space: normal !important; }
 }
+
+/* 랜덤스쿱 캐릭터 선택 버튼이 가려지지 않도록 */
+.scoopTop, .scoopRightPanel { overflow: visible !important; }
+.scoopTop .multiBtn, .scoopRightPanel .multiBtn { display: inline-flex !important; min-width: 120px; }
