@@ -2077,7 +2077,7 @@ export default function App() {
       <>
         <div className="filterRow">
           <label>상품명</label>
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="상품명 검색" />
+          <input value={search} onChange={keepFocusSet(setSearch)} placeholder="상품명 검색" />
           <MultiCheckFilter label="캐릭터1" options={char1Options} selected={char1Selected} setSelected={setChar1Selected} />
           <MultiCheckFilter label="캐릭터2" options={char2Options} selected={char2Selected} setSelected={setChar2Selected} />
           <label>카테고리</label>
@@ -2211,9 +2211,9 @@ export default function App() {
             <div className="filterRow calcRow">
               <label>판매가</label><input value={salePrice} onChange={(e) => setSalePrice(e.target.value)} />
               <label>수수료율</label><input value={feeRate} onChange={(e) => setFeeRate(e.target.value)} />
-              <label>주문자명</label><input value={customer} onChange={(e) => setCustomer(e.target.value)} />
+              <label>주문자명</label><input value={customer} onChange={keepFocusSet(setCustomer)} />
               <label className="checkLine"><input checked={reorder} onChange={(e) => setReorder(e.target.checked)} type="checkbox" /> 재주문</label>
-              <label>메모</label><input value={memo} onChange={(e) => setMemo(e.target.value)} />
+              <label>메모</label><input value={memo} onChange={keepFocusSet(setMemo)} />
               <button onClick={clearCompose}>주문초기화</button>
               <button onClick={createOrderFromCompose}>박스출고</button>
             </div>
@@ -2423,9 +2423,9 @@ export default function App() {
             <div className="buttonRow">
               <select value={scoopGapScope} onChange={(e) => setScoopGapScope(e.target.value)} title="부족금액 추천 범위"><option value="same">같은 캐릭터 상품만 보기</option><option value="all">모든 캐릭터 보기</option></select>
               <button onClick={showScoopGapRecommendations}>부족 금액 추천 보기</button>
-              <input value={scoopCustomer} onChange={(e) => setScoopCustomer(e.target.value)} placeholder="주문자명" />
+              <input value={scoopCustomer} onChange={(e) => setScoopCustomer(e.target.value)} placeholder="주문자명" autoComplete="off" />
               <label className="checkLine"><input checked={scoopReorder} onChange={(e) => setScoopReorder(e.target.checked)} type="checkbox" /> 재주문</label>
-              <input value={scoopMemo} onChange={(e) => setScoopMemo(e.target.value)} placeholder="메모" />
+              <input value={scoopMemo} onChange={(e) => setScoopMemo(e.target.value)} placeholder="메모" autoComplete="off" />
               <button onClick={createOrderFromScoop}>박스출고</button>
             </div>
             <div className="tableWrap recItems">
@@ -2488,8 +2488,8 @@ export default function App() {
       <>
         <section className="panel">
           <div className="filterRow">
-            <label>주문자명</label><input value={orderSearchCustomer} onChange={(e) => setOrderSearchCustomer(e.target.value)} />
-            <label>주문일</label><input value={orderSearchDate} onChange={(e) => setOrderSearchDate(e.target.value)} placeholder="YYYY-MM-DD" />
+            <label>주문자명</label><input value={orderSearchCustomer} onChange={keepFocusSet(setOrderSearchCustomer)} />
+            <label>주문일</label><input value={orderSearchDate} onChange={keepFocusSet(setOrderSearchDate)} placeholder="YYYY-MM-DD" />
             <label className="checkLine"><input checked={orderReorderOnly} onChange={(e) => setOrderReorderOnly(e.target.checked)} type="checkbox" /> 재구매자만</label>
             <button onClick={getOrders}>검색</button>
             <button onClick={() => { setOrderSearchCustomer(""); setOrderSearchDate(""); setOrderReorderOnly(false); setSelectedOrderId(null); }}>초기화</button>
@@ -2742,6 +2742,27 @@ export default function App() {
         </form>
       </div>
     );
+  }
+
+
+  function keepFocusSet(setter) {
+    return (e) => {
+      const value = e.target.value;
+      const active = document.activeElement;
+      const selectionStart = active && active.selectionStart;
+      const selectionEnd = active && active.selectionEnd;
+      setter(value);
+      requestAnimationFrame(() => {
+        if (active && document.body.contains(active) && typeof active.focus === "function") {
+          active.focus();
+          try {
+            if (selectionStart !== null && selectionStart !== undefined) {
+              active.setSelectionRange(selectionStart, selectionEnd);
+            }
+          } catch {}
+        }
+      });
+    };
   }
 
   function renderPage() {

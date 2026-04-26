@@ -1349,3 +1349,21 @@ body {
 button.savedGroupDeleteBtn {
   margin-left: 4px !important;
 }
+
+
+/* v35: 모바일 입력창 포커스/키보드 안정화 */
+@media (max-width: 760px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* 데스크톱 화면 그대로 쓰는 구조에서도 입력창은 포커스 유지 우선 */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid #d6a700 !important;
+  outline-offset: 1px !important;
+}
