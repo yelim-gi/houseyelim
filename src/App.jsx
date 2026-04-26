@@ -2334,6 +2334,7 @@ export default function App() {
             <button onClick={generateScoopGroups}>그룹 나누기</button>
             <button onClick={saveScoopGroups}>그룹 저장</button>
             <button onClick={loadScoopGroups}>저장된 그룹 열기</button>
+            <button className="deleteBtn savedGroupDeleteBtn" onClick={deleteSavedScoopGroupByPicker}>저장 그룹 삭제</button>
             <button onClick={sendScoopToCompose}>현재 조합으로 보내기</button>
           </div>
         </section>

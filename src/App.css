@@ -1333,3 +1333,19 @@ body {
   color: #7a0000 !important;
   font-weight: 900 !important;
 }
+
+
+/* v34: 저장 그룹 삭제 버튼 강제 표시 */
+.savedGroupDeleteBtn {
+  display: inline-flex !important;
+  background: #ffd6d6 !important;
+  border: 1px solid #cc7777 !important;
+  color: #7a0000 !important;
+  font-weight: 900 !important;
+}
+
+.scoopTop .savedGroupDeleteBtn,
+.scoopOriginalGrid .savedGroupDeleteBtn,
+button.savedGroupDeleteBtn {
+  margin-left: 4px !important;
+}
