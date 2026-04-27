@@ -1,8 +1,49 @@
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "./supabase";
 
 const ADMIN_EMAIL = "qzwxec88888@gmail.com";
+
+function StableSearchInput({ value, onChange, placeholder = "검색", className = "", inputName = "stable-search" }) {
+  const [localValue, setLocalValue] = React.useState(value || "");
+  const composingRef = React.useRef(false);
+  const inputRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!composingRef.current && value !== localValue && document.activeElement !== inputRef.current) {
+      setLocalValue(value || "");
+    }
+  }, [value]);
+
+  const commit = (next) => {
+    setLocalValue(next);
+    onChange(next);
+  };
+
+  return (
+    <input
+      ref={inputRef}
+      className={className}
+      name={inputName}
+      value={localValue}
+      placeholder={placeholder}
+      autoComplete="off"
+      autoCorrect="off"
+      autoCapitalize="off"
+      spellCheck="false"
+      onCompositionStart={() => { composingRef.current = true; }}
+      onCompositionEnd={(e) => {
+        composingRef.current = false;
+        commit(e.currentTarget.value);
+      }}
+      onChange={(e) => {
+        setLocalValue(e.target.value);
+        if (!composingRef.current) onChange(e.target.value);
+      }}
+    />
+  );
+}
+
 import * as XLSX from "xlsx";
 import "./App.css";
 
@@ -2077,7 +2118,7 @@ export default function App() {
       <>
         <div className="filterRow">
           <label>상품명</label>
-          <input value={search} onChange={keepFocusSet(setSearch)} placeholder="상품명 검색" />
+          <StableSearchInput value={search} onChange={setSearch} placeholder="상품명 검색" inputName="manual-product-search" />
           <MultiCheckFilter label="캐릭터1" options={char1Options} selected={char1Selected} setSelected={setChar1Selected} />
           <MultiCheckFilter label="캐릭터2" options={char2Options} selected={char2Selected} setSelected={setChar2Selected} />
           <label>카테고리</label>
