@@ -194,14 +194,14 @@ function productMatchesPreferredChars(p, pref1, pref2) {
 
 
 
-function matchesAnySelectedCharacter(p, selected) {
+function v48MatchesSelectedCharacter(p, selected) {
   if (!selected || selected.length === 0) return true;
   const chars = [...splitMultiValues(p.char1), ...splitMultiValues(p.char2)];
   return chars.some((c) => selected.includes(c));
 }
 
-function itemDisplayNameFromOrderItem(x) {
-  return x.product_name || x.name || x.item_name || `상품ID ${x.product_id}`;
+function v48SelectedChars(a = [], b = []) {
+  return Array.from(new Set([...(a || []), ...(b || [])])).filter(Boolean);
 }
 
 function compactText(v, max = 42) {
@@ -279,6 +279,8 @@ function MultiCheckFilter({ label, options, selected, setSelected }) {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("대시보드");
+  const [v48ManualStrictCharsOnly, setV48ManualStrictCharsOnly] = useState(false);
+  const [v48ScoopStrictCharsOnly, setV48ScoopStrictCharsOnly] = useState(false);
 
   const [authUser, setAuthUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -310,7 +312,6 @@ export default function App() {
   const [feeRate, setFeeRate] = useState("3.63");
   const [defaultSale, setDefaultSale] = useState("39900");
   const [defaultFee, setDefaultFee] = useState("3.63");
-  const [totalInvestment, setTotalInvestment] = useState("0");
   const [customer, setCustomer] = useState("");
   const [memo, setMemo] = useState("");
   const [reorder, setReorder] = useState(false);
@@ -329,7 +330,6 @@ export default function App() {
   const [manualType, setManualType] = useState("프리미엄박스");
   const [manualBoxCount, setManualBoxCount] = useState("1");
   const [manualTargetMargin, setManualTargetMargin] = useState("20");
-  const [manualStrictCharsOnly, setManualStrictCharsOnly] = useState(false);
   const [manualRetailExtra, setManualRetailExtra] = useState("0");
   const [manualHiddenDiscount, setManualHiddenDiscount] = useState("5");
   const [manualStyle, setManualStyle] = useState("선택안함");
@@ -357,7 +357,6 @@ export default function App() {
   const [scoopCategoryStats, setScoopCategoryStats] = useState([]);
   const [scoopExcludedCount, setScoopExcludedCount] = useState(0);
   const [scoopTargetMargin, setScoopTargetMargin] = useState("20");
-  const [scoopStrictCharsOnly, setScoopStrictCharsOnly] = useState(false);
   const [scoopRecType, setScoopRecType] = useState("전체 보기");
   const [scoopRecSort, setScoopRecSort] = useState("추천순");
   const [scoopSelectedCategories, setScoopSelectedCategories] = useState([]);
@@ -1038,39 +1037,29 @@ export default function App() {
 
   function showSelectedOrderItems() {
     if (!selectedOrderId) return alert("주문을 선택해줘.");
-    const rows = getOrderItemsFor(selectedOrderId);
+    const rows = orderItems.filter((x) => String(x.order_id) === String(selectedOrderId));
     if (rows.length === 0) return alert("주문상품이 없어요.");
+    const wholesaleTotal = rows.reduce((s, x) => s + toInt(x.wholesale || x.wholesale_price || x.cost || 0) * toInt(x.qty || 1), 0);
+    const retailTotal = rows.reduce((s, x) => s + toInt(x.retail || x.retail_price || x.consumer_price || 0) * toInt(x.qty || 1), 0);
+    const text = rows.map((x, i) => `${i + 1}. ${x.product_name || x.name || x.item_name || `상품ID ${x.product_id}`} | 수량 ${x.qty || 1} | 도매가 ${money(x.wholesale || x.wholesale_price || 0)} | 소비자가 ${money(x.retail || x.retail_price || 0)}`).join("\\n");
+    alert(`주문상품 목록\\n\\n${text}\\n\\n총 도매가합: ${money(wholesaleTotal)}\\n총 소비자가합: ${money(retailTotal)}`);
+  }
 
-    const retailTotal = orderItemsRetailSum(rows);
-    const wholesaleTotal = orderItemsWholesaleSum(rows);
-    const text = rows.map((x, i) =>
-      `${i + 1}. ${itemDisplayNameFromOrderItem(x)} | 수량 ${x.qty || 1} | 도매가 ${money(x.wholesale || x.wholesale_price || 0)} | 소비자가 ${money(x.retail || x.retail_price || 0)}`
-    ).join("\n");
-
-    alert(`주문상품 목록\n\n${text}\n\n총 도매가합: ${money(wholesaleTotal)}\n총 소비자가합: ${money(retailTotal)}`);
-
-    const action = window.prompt(
-      "상품을 수정하려면 입력해줘.\n\n교체: c번호  예) c1\n삭제: d번호  예) d1\n추가: a\n그냥 닫기: 빈칸",
-      ""
-    );
-
-    if (!action) return;
-    const lower = action.toLowerCase().trim();
-
-    if (lower === "a") return addOrderItem(selectedOrderId);
-
-    const mode = lower[0];
-    const idx = Number(lower.slice(1)) - 1;
-    if (Number.isNaN(idx) || idx < 0 || idx >= rows.length) return alert("번호가 올바르지 않아요.");
-
-    if (mode === "c") return replaceOrderItem(selectedOrderId, rows[idx].id);
-    if (mode === "d") return deleteOrderItem(selectedOrderId, rows[idx].id);
-
-    alert("입력 형식이 올바르지 않아요.");
+  function downloadCustomerOrderExcel() {
+    const data = orders.map((o) => ({
+      주문자명: o.customer,
+      박스수량: 1,
+      판매가: o.sale_price,
+      상태: o.status,
+      메모: o.memo || "",
+    }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), "고객용주문");
+    XLSX.writeFile(wb, "고객용_주문목록.xlsx");
   }
 
   function baseManualCandidates() {
-    const strictChars = manualStrictCharsOnly ? Array.from(new Set([...(manualPrefChar1 || []), ...(manualPrefChar2 || [])])) : [];
+    const v48StrictManualChars = v48ManualStrictCharsOnly ? v48SelectedChars(manualPrefChar1, manualPrefChar2) : [];
     return products.filter((p) => {
       if (toInt(p.stock) <= 0) return false;
       if (!valueMatchesSelected(p.char1, manualPrefChar1)) return false;
@@ -1576,7 +1565,7 @@ export default function App() {
   }
 
   function scoopCandidateProductsWithExcluded() {
-    const strictScoopChars = scoopStrictCharsOnly ? Array.from(new Set([...(scoopChar1Selected || []), ...(scoopChar2Selected || [])])) : [];
+    const v48StrictScoopChars = v48ScoopStrictCharsOnly ? v48SelectedChars(scoopChar1Selected, scoopChar2Selected) : [];
     const available = [];
     const excluded = [];
     products.forEach((p) => {
@@ -2013,41 +2002,20 @@ export default function App() {
 
   function replaceScoopItem(index) {
     const rec = scoopRecommendations[selectedScoopIndex];
-    if (!rec) return alert("추천안을 선택해줘.");
-
-    const oldItem = rec.items[index];
-    if (!oldItem) return alert("교체할 상품을 찾지 못했어요.");
-
-    const keyword = window.prompt("교체할 상품명/캐릭터/카테고리 검색어를 입력해줘.\n빈칸이면 비슷한 소비자가 상품 후보를 보여줘요.", "");
-    if (keyword === null) return;
-
-    const usedIds = new Set(rec.items.map((p, i) => i === index ? null : p.id).filter(Boolean));
-    let pool = scoopCandidateProducts().filter((p) => !usedIds.has(p.id) && p.id !== oldItem.id);
-
-    if (keyword.trim()) {
-      const k = keyword.trim().toLowerCase();
-      pool = pool.filter((p) =>
-        String(p.name || "").toLowerCase().includes(k) ||
-        String(p.char1 || "").toLowerCase().includes(k) ||
-        String(p.char2 || "").toLowerCase().includes(k) ||
-        String(p.category || "").toLowerCase().includes(k)
-      );
-    }
-
-    pool = pool.sort((a, b) => Math.abs(toInt(a.retail) - toInt(oldItem.retail)) - Math.abs(toInt(b.retail) - toInt(oldItem.retail))).slice(0, 20);
-    if (pool.length === 0) return alert("교체 후보가 없어요.");
-
-    const list = pool.map((p, i) => `${i + 1}. ${p.name} | ${p.char1}/${p.char2} | 재고 ${p.stock} | 도매가 ${money(p.wholesale)} | 소비자가 ${money(p.retail)}`).join("\n");
-    const pick = window.prompt("교체할 상품 번호를 입력해줘.\n\n" + list, "1");
-    if (!pick) return;
-
-    const picked = pool[Number(pick) - 1];
-    if (!picked) return alert("번호가 올바르지 않아요.");
-
-    const newItems = rec.items.map((p, i) => i === index ? { ...picked, _tag: p._tag || "교체" } : p);
-    const fin = calcFinance(newItems, toInt(rec.saleTotal || salePrice || defaultSale), Number(rec.feeRate || feeRate || defaultFee || 0));
+    if (!rec) return;
+    const old = rec.items[index];
+    const pool = scoopCandidateProducts()
+      .filter((p) => !rec.items.some((x) => x.id === p.id))
+      .sort((a, b) => Math.abs(toInt(a.retail) - toInt(old.retail)) - Math.abs(toInt(b.retail) - toInt(old.retail)));
+    const msg = pool.slice(0, 30).map((p) => `${p.id}: ${p.name} | 도매가 ${money(p.wholesale)} | 소비자가 ${money(p.retail)} | 카테고리 ${p.category}`).join("\n");
+    const id = window.prompt(`교체할 상품 ID 입력\n\n${msg}`);
+    if (!id) return;
+    const picked = pool.find((p) => String(p.id) === String(id));
+    if (!picked) return alert("상품 ID를 찾지 못했어요.");
     const next = [...scoopRecommendations];
-    next[selectedScoopIndex] = { ...rec, items: newItems, finance: fin, note: `${rec.note || ""} / 상품교체` };
+    const items = [...rec.items];
+    items[index] = picked;
+    next[selectedScoopIndex] = { ...rec, items, finance: calcFinance(items, salePrice, feeRate) };
     setScoopRecommendations(next);
   }
 
@@ -2176,29 +2144,27 @@ export default function App() {
   }
 
 
-  const fixedTotalInvestment = toInt(totalInvestment);
-
-  const currentInventoryCost = useMemo(() => {
+  const v48CurrentInventoryCost = useMemo(() => {
     return products.reduce((sum, p) => sum + toInt(p.wholesale) * toInt(p.stock), 0);
   }, [products]);
 
-  const currentInventoryRetail = useMemo(() => {
+  const v48CurrentInventoryRetail = useMemo(() => {
     return products.reduce((sum, p) => sum + toInt(p.retail) * toInt(p.stock), 0);
   }, [products]);
 
-
-  const allInventoryPurchaseCost = useMemo(() => {
-    return products.reduce((sum, p) => {
-      const initialQty = toInt(p.initial_stock || p.initialStock || p.original_stock || p.stock);
-      return sum + toInt(p.wholesale) * initialQty;
-    }, 0);
-  }, [products]);
-
-  const materialTotalCost = useMemo(() => {
+  const v48MaterialsTotal = useMemo(() => {
     return materials.reduce((sum, m) => sum + toInt(m.amount || m.price || m.cost || 0), 0);
   }, [materials]);
 
-  const autoTotalInvestment = allInventoryPurchaseCost + materialTotalCost;
+  const v48TotalInvestment = useMemo(() => {
+    // 전체 투자원금: 가능한 경우 initial_stock/original_stock를 우선 사용하고,
+    // 없으면 현재 stock 기준으로 계산합니다. 매출/순이익으로 차감하지 않습니다.
+    const stockCost = products.reduce((sum, p) => {
+      const baseQty = toInt(p.initial_stock || p.initialStock || p.original_stock || p.stock);
+      return sum + toInt(p.wholesale) * baseQty;
+    }, 0);
+    return stockCost + v48MaterialsTotal;
+  }, [products, v48MaterialsTotal]);
 
   function DashboardPage() {
     return (
@@ -2307,7 +2273,7 @@ export default function App() {
                 <label>구성</label><select value={manualStyle} onChange={(e) => setManualStyle(e.target.value)}><option>선택안함</option><option>자잘자잘</option><option>믹스</option><option>큼직큼직</option></select>
                 <MultiCheckFilter label="선호 캐릭터1" options={char1Options} selected={manualPrefChar1} setSelected={setManualPrefChar1} />
                 <MultiCheckFilter label="선호 캐릭터2" options={char2Options} selected={manualPrefChar2} setSelected={setManualPrefChar2} />
-                <label className="checkLine"><input type="checkbox" checked={manualStrictCharsOnly} onChange={(e) => setManualStrictCharsOnly(e.target.checked)} /> 원하는 캐릭터만 구성</label>
+                <label className="checkLine"><input type="checkbox" checked={v48ManualStrictCharsOnly} onChange={(e) => setV48ManualStrictCharsOnly(e.target.checked)} /> 원하는 캐릭터만 구성</label>
               </div>
               <div className="buttonRow">
                 <button onClick={generateManualRecommendations}>추천안 생성</button>
@@ -2406,7 +2372,7 @@ export default function App() {
             <label>분배기준</label><select value={scoopMode} onChange={(e) => setScoopMode(e.target.value)}><option>상품 수 균등</option><option>소비자가 균등</option><option>도매가 균등</option><option>혼합 균형</option><option>카테고리 자동</option></select>
             <MultiCheckFilter label="캐릭터1" options={char1Options} selected={scoopChar1Selected} setSelected={setScoopChar1Selected} />
             <MultiCheckFilter label="캐릭터2" options={char2Options} selected={scoopChar2Selected} setSelected={setScoopChar2Selected} />
-                <label className="checkLine"><input type="checkbox" checked={scoopStrictCharsOnly} onChange={(e) => setScoopStrictCharsOnly(e.target.checked)} /> 원하는 캐릭터만 구성</label>
+                <label className="checkLine"><input type="checkbox" checked={v48ScoopStrictCharsOnly} onChange={(e) => setV48ScoopStrictCharsOnly(e.target.checked)} /> 원하는 캐릭터만 구성</label>
             <label>가격대</label><select value={scoopPrice} onChange={(e) => setScoopPrice(e.target.value)}>{PRICE_RANGES.map((v) => <option key={v}>{v}</option>)}</select>
             <label>소비자가상한</label><input value={scoopRetailLimit} onChange={(e) => setScoopRetailLimit(e.target.value)} />
             <button onClick={analyzeScoopCategories}>카테고리 자동 분석</button>
@@ -2506,6 +2472,7 @@ export default function App() {
               <label className="checkLine"><input checked={scoopReorder} onChange={(e) => setScoopReorder(e.target.checked)} type="checkbox" /> 재주문</label>
               <input value={scoopMemo} onChange={(e) => setScoopMemo(e.target.value)} placeholder="메모" />
               <button onClick={createOrderFromScoop}>박스출고</button>
+              <button onClick={sendSelectedScoopToManual}>수동박스로 보내기</button>
             </div>
             <div className="tableWrap recItems">
               <table><thead><tr><th>ID</th><th>상품명</th><th>그룹/카테고리</th><th>도매가</th><th>소비자가</th><th>교체</th><th>삭제</th></tr></thead><tbody>
@@ -2545,153 +2512,6 @@ export default function App() {
     await writeAudit("order_permanent_delete", `order_id=${orderId}`);
     alert("영구삭제 완료!");
     getOrders();
-    getOrderItems();
-  }
-
-
-  function getOrderItemsFor(orderId) {
-    return orderItems.filter((x) => String(x.order_id) === String(orderId));
-  }
-
-  function orderItemsRetailSum(rows) {
-    return (rows || []).reduce((sum, x) => sum + toInt(x.retail || x.retail_price || x.consumer_price || 0) * toInt(x.qty || 1), 0);
-  }
-
-  function orderItemsWholesaleSum(rows) {
-    return (rows || []).reduce((sum, x) => sum + toInt(x.wholesale || x.wholesale_price || x.cost || 0) * toInt(x.qty || 1), 0);
-  }
-
-  async function replaceOrderItem(orderId, orderItemId) {
-    const row = orderItems.find((x) => String(x.id) === String(orderItemId));
-    if (!row) return alert("주문상품을 찾지 못했어요.");
-
-    const keyword = window.prompt("교체할 새 상품 검색어를 입력해줘.", "");
-    if (keyword === null) return;
-
-    const k = keyword.trim().toLowerCase();
-    let pool = products.filter((p) => toInt(p.stock) > 0);
-    if (k) {
-      pool = pool.filter((p) =>
-        String(p.name || "").toLowerCase().includes(k) ||
-        String(p.char1 || "").toLowerCase().includes(k) ||
-        String(p.char2 || "").toLowerCase().includes(k) ||
-        String(p.category || "").toLowerCase().includes(k)
-      );
-    }
-
-    pool = pool.slice(0, 30);
-    if (pool.length === 0) return alert("교체 후보가 없어요.");
-
-    const list = pool.map((p, i) => `${i + 1}. ${p.name} | ${p.char1}/${p.char2} | 재고 ${p.stock} | 도매가 ${money(p.wholesale)} | 소비자가 ${money(p.retail)}`).join("\n");
-    const pick = window.prompt("교체할 상품 번호를 입력해줘.\n\n" + list, "1");
-    if (!pick) return;
-
-    const newProduct = pool[Number(pick) - 1];
-    if (!newProduct) return alert("번호가 올바르지 않아요.");
-
-    const qty = toInt(row.qty || 1);
-    if (toInt(newProduct.stock) < qty) return alert(`새 상품 재고 부족\n필요 ${qty}개 / 현재 ${newProduct.stock}개`);
-
-    const oldProduct = products.find((p) => String(p.id) === String(row.product_id));
-
-    if (!window.confirm(`주문상품을 교체할까요?\n\n기존: ${itemDisplayNameFromOrderItem(row)}\n새상품: ${newProduct.name}\n\n기존 상품 재고는 ${qty}개 복구되고, 새 상품 재고는 ${qty}개 차감됩니다.`)) return;
-
-    if (oldProduct) {
-      await supabase.from("products").update({ stock: toInt(oldProduct.stock) + qty }).eq("id", oldProduct.id);
-    }
-    await supabase.from("products").update({ stock: toInt(newProduct.stock) - qty }).eq("id", newProduct.id);
-
-    const { error } = await supabase.from("order_items").update({
-      product_id: newProduct.id,
-      name: newProduct.name,
-      product_name: newProduct.name,
-      char1: newProduct.char1,
-      char2: newProduct.char2,
-      category: newProduct.category,
-      wholesale: toInt(newProduct.wholesale),
-      retail: toInt(newProduct.retail),
-      wholesale_price: toInt(newProduct.wholesale),
-      retail_price: toInt(newProduct.retail),
-    }).eq("id", orderItemId);
-
-    if (error) return alert("주문상품 교체 저장 실패: " + error.message);
-
-    alert("주문상품 교체 완료! 재고도 보정됐어요.");
-    getProducts();
-    getOrderItems();
-  }
-
-  async function deleteOrderItem(orderId, orderItemId) {
-    const row = orderItems.find((x) => String(x.id) === String(orderItemId));
-    if (!row) return alert("주문상품을 찾지 못했어요.");
-
-    const qty = toInt(row.qty || 1);
-    if (!window.confirm(`주문상품을 삭제할까요?\n\n${itemDisplayNameFromOrderItem(row)}\n\n삭제하면 해당 상품 재고가 ${qty}개 복구됩니다.`)) return;
-
-    const oldProduct = products.find((p) => String(p.id) === String(row.product_id));
-    if (oldProduct) {
-      await supabase.from("products").update({ stock: toInt(oldProduct.stock) + qty }).eq("id", oldProduct.id);
-    }
-
-    const { error } = await supabase.from("order_items").delete().eq("id", orderItemId);
-    if (error) return alert("주문상품 삭제 실패: " + error.message);
-
-    alert("주문상품 삭제 완료! 재고도 복구됐어요.");
-    getProducts();
-    getOrderItems();
-  }
-
-  async function addOrderItem(orderId) {
-    const keyword = window.prompt("추가할 상품 검색어를 입력해줘.", "");
-    if (keyword === null) return;
-
-    const k = keyword.trim().toLowerCase();
-    let pool = products.filter((p) => toInt(p.stock) > 0);
-    if (k) {
-      pool = pool.filter((p) =>
-        String(p.name || "").toLowerCase().includes(k) ||
-        String(p.char1 || "").toLowerCase().includes(k) ||
-        String(p.char2 || "").toLowerCase().includes(k) ||
-        String(p.category || "").toLowerCase().includes(k)
-      );
-    }
-
-    pool = pool.slice(0, 30);
-    if (pool.length === 0) return alert("추가 후보가 없어요.");
-
-    const list = pool.map((p, i) => `${i + 1}. ${p.name} | ${p.char1}/${p.char2} | 재고 ${p.stock} | 도매가 ${money(p.wholesale)} | 소비자가 ${money(p.retail)}`).join("\n");
-    const pick = window.prompt("추가할 상품 번호를 입력해줘.\n\n" + list, "1");
-    if (!pick) return;
-
-    const p = pool[Number(pick) - 1];
-    if (!p) return alert("번호가 올바르지 않아요.");
-
-    const qty = Math.max(1, toInt(window.prompt("수량을 입력해줘.", "1") || "1"));
-    if (toInt(p.stock) < qty) return alert(`재고 부족\n필요 ${qty}개 / 현재 ${p.stock}개`);
-
-    if (!window.confirm(`${p.name} ${qty}개를 주문에 추가할까요?\n추가하면 재고가 ${qty}개 차감됩니다.`)) return;
-
-    await supabase.from("products").update({ stock: toInt(p.stock) - qty }).eq("id", p.id);
-
-    const { error } = await supabase.from("order_items").insert([{
-      order_id: orderId,
-      product_id: p.id,
-      name: p.name,
-      product_name: p.name,
-      char1: p.char1,
-      char2: p.char2,
-      category: p.category,
-      qty,
-      wholesale: toInt(p.wholesale),
-      retail: toInt(p.retail),
-      wholesale_price: toInt(p.wholesale),
-      retail_price: toInt(p.retail),
-    }]);
-
-    if (error) return alert("주문상품 추가 실패: " + error.message);
-
-    alert("주문상품 추가 완료! 재고도 차감됐어요.");
-    getProducts();
     getOrderItems();
   }
 
@@ -2980,6 +2800,15 @@ export default function App() {
     const el = document.getElementById("manual-product-search-input");
     if (el) el.value = "";
     setSearch("");
+  }
+
+
+  function sendSelectedScoopToManual() {
+    const rec = scoopRecommendations[selectedScoopIndex];
+    if (!rec) return alert("수동박스로 보낼 추천안을 선택해줘.");
+    setComposeItems(rec.items || []);
+    setActiveTab("수동박스");
+    alert("랜덤스쿱 추천안을 수동박스 현재 조합 리스트로 옮겼어요. 수동박스에서 수정 후 박스출고해주세요.");
   }
 
   function renderPage() {
