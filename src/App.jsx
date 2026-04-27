@@ -1,40 +1,8 @@
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "./supabase";
 
 const ADMIN_EMAIL = "qzwxec88888@gmail.com";
-
-function StableSearchInput({ value, onChange, onEnter, placeholder = "검색", className = "", inputName = "stable-search" }) {
-  const [localValue, setLocalValue] = React.useState(value || "");
-  const composingRef = React.useRef(false);
-  const inputRef = React.useRef(null);
-
-  React.useEffect(() => {
-    if (!composingRef.current && value !== localValue && document.activeElement !== inputRef.current) {
-      setLocalValue(value || "");
-    }
-  }, [value]);
-
-  const commit = (next) => {
-    setLocalValue(next);
-    onChange(next);
-  };
-
-  return (
-    <input
-      ref={inputRef}
-      className={className}
-      name={inputName}
-      value={localValue}
-      placeholder={placeholder}
-      autoComplete="off"
-      autoCorrect="off"
-      autoCapitalize="off"
-      spellCheck="false"
-
-  );
-}
-
 import * as XLSX from "xlsx";
 import "./App.css";
 
@@ -318,7 +286,6 @@ export default function App() {
   const [isImportingExcel, setIsImportingExcel] = useState(false);
 
   const [search, setSearch] = useState("");
-  const [manualSearchDraft, setManualSearchDraft] = useState("");
   const [char1Selected, setChar1Selected] = useState([]);
   const [char2Selected, setChar2Selected] = useState([]);
   const [categoryFilter, setCategoryFilter] = useState("전체");
@@ -661,7 +628,7 @@ export default function App() {
   const canceledOrders = filteredOrders.filter((o) => o.status === "취소");
 
   function resetFilters() {
-    clearManualProductSearch();
+    setSearch("");
     setChar1Selected([]);
     setChar2Selected([]);
     setCategoryFilter("전체");
@@ -2110,20 +2077,9 @@ export default function App() {
       <>
         <div className="filterRow">
           <label>상품명</label>
-        <input
-          id="manual-product-search-input"
-          name="manual-product-search"
-          defaultValue={search}
-          placeholder="상품명 검색"
-          autoComplete="off"
-        />
+          <input id="manual-product-search-input" name="manual-product-search" defaultValue={search} placeholder="상품명 검색" autoComplete="off" />
         <button type="button" onClick={runManualProductSearch}>검색</button>
-        <button type="button" onClick={clearManualProductSearch}>검색초기화</button>
-        <span className="manualSearchHint">입력 후 검색 버튼을 눌러주세요</span>
-        <span className="manualSearchHint">입력 후 검색 버튼을 눌러주세요</span>
-        <button onClick={runManualProductSearch}>검색</button>
-        <button onClick={clearManualProductSearch}>검색초기화</button>
-        <span className="manualSearchHint">입력 후 검색 또는 Enter</span>
+        <button type="button" onClick={clearManualProductSearch}>검색초기화</button> setSearch(e.target.value)} placeholder="상품명 검색" />
           <MultiCheckFilter label="캐릭터1" options={char1Options} selected={char1Selected} setSelected={setChar1Selected} />
           <MultiCheckFilter label="캐릭터2" options={char2Options} selected={char2Selected} setSelected={setChar2Selected} />
           <label>카테고리</label>
@@ -2257,9 +2213,9 @@ export default function App() {
             <div className="filterRow calcRow">
               <label>판매가</label><input value={salePrice} onChange={(e) => setSalePrice(e.target.value)} />
               <label>수수료율</label><input value={feeRate} onChange={(e) => setFeeRate(e.target.value)} />
-              <label>주문자명</label><input value={customer} onChange={keepFocusSet(setCustomer)} />
+              <label>주문자명</label><input value={customer} onChange={(e) => setCustomer(e.target.value)} />
               <label className="checkLine"><input checked={reorder} onChange={(e) => setReorder(e.target.checked)} type="checkbox" /> 재주문</label>
-              <label>메모</label><input value={memo} onChange={keepFocusSet(setMemo)} />
+              <label>메모</label><input value={memo} onChange={(e) => setMemo(e.target.value)} />
               <button onClick={clearCompose}>주문초기화</button>
               <button onClick={createOrderFromCompose}>박스출고</button>
             </div>
@@ -2469,9 +2425,9 @@ export default function App() {
             <div className="buttonRow">
               <select value={scoopGapScope} onChange={(e) => setScoopGapScope(e.target.value)} title="부족금액 추천 범위"><option value="same">같은 캐릭터 상품만 보기</option><option value="all">모든 캐릭터 보기</option></select>
               <button onClick={showScoopGapRecommendations}>부족 금액 추천 보기</button>
-              <input value={scoopCustomer} onChange={(e) => setScoopCustomer(e.target.value)} placeholder="주문자명" autoComplete="off" />
+              <input value={scoopCustomer} onChange={(e) => setScoopCustomer(e.target.value)} placeholder="주문자명" />
               <label className="checkLine"><input checked={scoopReorder} onChange={(e) => setScoopReorder(e.target.checked)} type="checkbox" /> 재주문</label>
-              <input value={scoopMemo} onChange={(e) => setScoopMemo(e.target.value)} placeholder="메모" autoComplete="off" />
+              <input value={scoopMemo} onChange={(e) => setScoopMemo(e.target.value)} placeholder="메모" />
               <button onClick={createOrderFromScoop}>박스출고</button>
             </div>
             <div className="tableWrap recItems">
@@ -2534,8 +2490,8 @@ export default function App() {
       <>
         <section className="panel">
           <div className="filterRow">
-            <label>주문자명</label><input value={orderSearchCustomer} onChange={keepFocusSet(setOrderSearchCustomer)} />
-            <label>주문일</label><input value={orderSearchDate} onChange={keepFocusSet(setOrderSearchDate)} placeholder="YYYY-MM-DD" />
+            <label>주문자명</label><input value={orderSearchCustomer} onChange={(e) => setOrderSearchCustomer(e.target.value)} />
+            <label>주문일</label><input value={orderSearchDate} onChange={(e) => setOrderSearchDate(e.target.value)} placeholder="YYYY-MM-DD" />
             <label className="checkLine"><input checked={orderReorderOnly} onChange={(e) => setOrderReorderOnly(e.target.checked)} type="checkbox" /> 재구매자만</label>
             <button onClick={getOrders}>검색</button>
             <button onClick={() => { setOrderSearchCustomer(""); setOrderSearchDate(""); setOrderReorderOnly(false); setSelectedOrderId(null); }}>초기화</button>
@@ -2788,27 +2744,6 @@ export default function App() {
         </form>
       </div>
     );
-  }
-
-
-  function keepFocusSet(setter) {
-    return (e) => {
-      const value = e.target.value;
-      const active = document.activeElement;
-      const selectionStart = active && active.selectionStart;
-      const selectionEnd = active && active.selectionEnd;
-      setter(value);
-      requestAnimationFrame(() => {
-        if (active && document.body.contains(active) && typeof active.focus === "function") {
-          active.focus();
-          try {
-            if (selectionStart !== null && selectionStart !== undefined) {
-              active.setSelectionRange(selectionStart, selectionEnd);
-            }
-          } catch {}
-        }
-      });
-    };
   }
 
 

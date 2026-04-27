@@ -1351,51 +1351,7 @@ button.savedGroupDeleteBtn {
 }
 
 
-/* v35: 모바일 입력창 포커스/키보드 안정화 */
-@media (max-width: 760px) {
-  input,
-  textarea,
-  select {
-    font-size: 16px !important;
-  }
-}
-
-/* 데스크톱 화면 그대로 쓰는 구조에서도 입력창은 포커스 유지 우선 */
-input:focus,
-textarea:focus,
-select:focus {
-  outline: 2px solid #d6a700 !important;
-  outline-offset: 1px !important;
-}
-
-
-/* v36: 수동박스 상품검색 입력 안정화 */
-input[name="manual-product-search"] {
-  min-width: 180px !important;
-  background: #fff !important;
-  border: 1px solid #b7a23a !important;
-}
-
-input[name="manual-product-search"]:focus {
-  outline: 3px solid #ffd84a !important;
-  outline-offset: 1px !important;
-}
-
-
-/* v37: 수동박스 검색은 입력 후 버튼/Enter로 실행 */
-.manualSearchHint {
-  font-size: 11px;
-  color: #7a6500;
-  margin-left: 4px;
-  white-space: nowrap;
-}
-
-input[name="manual-product-search"] {
-  min-width: 170px !important;
-}
-
-
-/* v38: 수동박스 상품검색 완전 비제어 input */
+/* v42: 안정 베이스 + 수동박스 검색 버튼 방식 */
 #manual-product-search-input {
   min-width: 190px !important;
   background: #fff !important;
@@ -1403,20 +1359,3 @@ input[name="manual-product-search"] {
   font-size: 16px !important;
   padding: 3px 6px !important;
 }
-
-#manual-product-search-input:focus {
-  outline: 3px solid #ffd84a !important;
-  outline-offset: 1px !important;
-}
-
-
-/* v39: 수동박스 검색 JSX 문법 안전 버전 */
-#manual-product-search-input {
-  min-width: 190px !important;
-  background: #fff !important;
-  border: 2px solid #d6a700 !important;
-  font-size: 16px !important;
-  padding: 3px 6px !important;
-}
-
-/* v41: manual search JSX orphan tag cleanup */

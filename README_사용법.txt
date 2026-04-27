@@ -57,62 +57,66 @@ v33 수정:
 v34: 랜덤스쿱 버튼 줄에 저장 그룹 삭제 버튼이 실제로 보이도록 강제 삽입했습니다.
 
 
-v35 수정:
-- 수동박스/재고관리 등 검색 입력 시 한 글자 입력 후 포커스가 날아가거나 모바일 키보드가 닫히는 문제 완화
-- 검색/주문자명/메모 입력 onChange를 포커스 유지 방식으로 변경
-- 모바일 입력창 폰트 크기를 16px 이상으로 조정해 브라우저 자동 줌/키보드 닫힘 현상 완화
-- 이전 버전에서 생길 수 있는 중복 함수/괄호 오류 재점검
+v42: v34 안정 베이스에서 다시 만들었습니다. 수동박스 검색은 입력 후 검색 버튼 방식으로만 최소 수정했습니다.
 
-
-v36 수정:
-- 수동박스 상품검색 input을 StableSearchInput 컴포넌트로 분리
-- 한글 조합 입력(composition) 중 리렌더로 포커스가 날아가는 문제 대응
-- 검색창이 한 글자 입력 후 닫히는 문제를 줄이기 위해 localValue로 입력값 유지
-
-
-v37 수정:
-- 수동박스 상품검색은 한 글자마다 즉시 필터링하지 않고, 입력 후 검색 버튼/Enter로 실행
-- 입력 중 화면 전체 리렌더가 발생하지 않도록 검색 draft 상태와 실제 검색 상태를 분리
-- 모바일/한글 입력 시 키보드가 닫히는 문제를 더 강하게 방지
-
-
-v38 수정:
-- 수동박스 상품검색창을 완전 비제어 input으로 변경
-- 입력 중에는 React 상태를 변경하지 않음
-- 검색 버튼/Enter를 눌렀을 때만 검색 실행
-- 한 글자 입력 후 키보드/입력창이 닫히는 문제를 가장 강하게 방지
-
-
-v39 수정:
-- v38 수동박스 검색 input JSX 문법 오류 수정
-- onKeyDown을 빌드 안전한 한 줄 JSX 속성으로 정리
-- 검색/검색초기화 버튼 유지
-- 중복 helper 함수 재점검
-
-
-v40 수정:
-- 수동박스 상품검색 input 안에 남아 있던 잘못된 onKeyDown/if JSX 조각을 완전히 제거했습니다.
-- Enter 검색 대신 검색 버튼으로만 실행되도록 단순화했습니다.
-- 로컬 빌드 확인 결과: False
-
-
-v41: 수동박스 검색 input 주변에 남은 잘못된 JSX 닫는 태그를 제거했습니다.
-
-검증용 검색창 코드 위치:
-2109:     return (
-2110:       <>
-2111:         <div className="filterRow">
-2112:           <label>상품명</label>
-2113:         <input
-2114:           id="manual-product-search-input"
-2115:           name="manual-product-search"
-2116:           defaultValue={search}
-2117:           placeholder="상품명 검색"
-2118:           autoComplete="off"
-2119:         />
-2120:         <button type="button" onClick={runManualProductSearch}>검색</button>
-2121:         <button type="button" onClick={clearManualProductSearch}>검색초기화</button>
-2122:         <span className="manualSearchHint">입력 후 검색 버튼을 눌러주세요</span>
-2123:         <span className="manualSearchHint">입력 후 검색 버튼을 눌러주세요</span>
-2124:         <button onClick={runManualProductSearch}>검색</button>
-2125:         <button onClick={clearManualProductSearch}>검색초기화</button>
+App.jsx 앞부분 확인:
+1: 
+2: import { useEffect, useMemo, useState } from "react";
+3: import { supabase } from "./supabase";
+4: 
+5: const ADMIN_EMAIL = "qzwxec88888@gmail.com";
+6: import * as XLSX from "xlsx";
+7: import "./App.css";
+8: 
+9: const PRICE_RANGES = [
+10:   "전체", "0~5000", "5000~10000", "10000~15000", "15000~20000",
+11:   "20000~25000", "25000~30000", "30000~35000", "35000+",
+12: ];
+13: 
+14: const TABS = ["대시보드", "재고관리", "수동박스", "랜덤스쿱", "주문관리", "취소보관함", "설정"];
+15: 
+16: function nowString() {
+17:   const d = new Date();
+18:   const p = (n) => String(n).padStart(2, "0");
+19:   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+20: }
+21: 
+22: function toNum(v) {
+23:   if (v === null || v === undefined || v === "") return 0;
+24:   const cleaned = String(v).replaceAll(",", "").replaceAll("원", "").replaceAll("%", "").trim();
+25:   const n = Number(cleaned);
+26:   return Number.isFinite(n) ? n : 0;
+27: }
+28: 
+29: function toInt(v) {
+30:   return Math.round(toNum(v));
+31: }
+32: 
+33: function money(v) {
+34:   return `${toInt(v).toLocaleString()}원`;
+35: }
+36: 
+37: function normalizeColName(value) {
+38:   return String(value ?? "")
+39:     .trim()
+40:     .toLowerCase()
+41:     .replace(/[ \t\n\r()[\]{}_\-·./]/g, "");
+42: }
+43: 
+44: function splitMultiValues(value) {
+45:   if (!value) return [];
+46:   let s = String(value).trim();
+47:   ["\n", "\r", "/", "\\", ",", "，", "、", "·", "ㆍ", "|", "&", "+"].forEach((sep) => {
+48:     s = s.replaceAll(sep, ",");
+49:   });
+50:   const out = [];
+51:   s.split(",").forEach((v) => {
+52:     const t = v.trim().replace(/\s+/g, " ");
+53:     if (t && !out.includes(t)) out.push(t);
+54:   });
+55:   return out;
+56: }
+57: 
+58: function valueMatchesSelected(value, selected) {
+59:   if (!selected || selected.length === 0) return true;
+60:   const tokens = splitMultiValues(value);
