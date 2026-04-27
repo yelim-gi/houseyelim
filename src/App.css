@@ -1349,3 +1349,65 @@ body {
 button.savedGroupDeleteBtn {
   margin-left: 4px !important;
 }
+
+
+/* v43: 검증 완료 수동박스 검색 버튼 방식 */
+#manual-product-search-input {
+  min-width: 190px !important;
+  background: #fff !important;
+  border: 2px solid #d6a700 !important;
+  font-size: 16px !important;
+  padding: 3px 6px !important;
+}
+
+
+/* v44: 주문상품 수정/캐릭터 고정 옵션 */
+.checkLine {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.checkLine input[type="checkbox"] {
+  width: 14px !important;
+  height: 14px !important;
+  margin: 0 !important;
+}
+
+
+/* v45: 총 투자원금 고정 / 현재 재고 매입가 분리 */
+.investmentSummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 8px;
+  margin: 8px 0;
+  padding: 8px;
+  border: 1px solid #d6c15c;
+  background: #fff8d8;
+}
+
+.investmentSummary div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: #fffdf2;
+  border: 1px solid #e0d28a;
+}
+
+.investmentSummary b {
+  color: #5a4300;
+}
+
+.investmentSummary span {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.investmentSummary p {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 12px;
+  color: #6a5200;
+  font-weight: 800;
+}
