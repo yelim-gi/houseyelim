@@ -1351,7 +1351,7 @@ button.savedGroupDeleteBtn {
 }
 
 
-/* v42: 안정 베이스 + 수동박스 검색 버튼 방식 */
+/* v43: 검증 완료 수동박스 검색 버튼 방식 */
 #manual-product-search-input {
   min-width: 190px !important;
   background: #fff !important;

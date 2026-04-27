@@ -2079,7 +2079,7 @@ export default function App() {
           <label>상품명</label>
           <input id="manual-product-search-input" name="manual-product-search" defaultValue={search} placeholder="상품명 검색" autoComplete="off" />
         <button type="button" onClick={runManualProductSearch}>검색</button>
-        <button type="button" onClick={clearManualProductSearch}>검색초기화</button> setSearch(e.target.value)} placeholder="상품명 검색" />
+        <button type="button" onClick={clearManualProductSearch}>검색초기화</button>
           <MultiCheckFilter label="캐릭터1" options={char1Options} selected={char1Selected} setSelected={setChar1Selected} />
           <MultiCheckFilter label="캐릭터2" options={char2Options} selected={char2Selected} setSelected={setChar2Selected} />
           <label>카테고리</label>
