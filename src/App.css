@@ -1375,8 +1375,8 @@ button.savedGroupDeleteBtn {
 }
 
 
-/* v45: 총 투자원금 고정 / 현재 재고 매입가 분리 */
-.investmentSummary {
+/* v46: 안전한 총 투자원금 고정 표시 */
+.safeInvestmentSummary {
   display: grid;
   grid-template-columns: repeat(3, minmax(180px, 1fr));
   gap: 8px;
@@ -1386,7 +1386,7 @@ button.savedGroupDeleteBtn {
   background: #fff8d8;
 }
 
-.investmentSummary div {
+.safeInvestmentSummary div {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1395,19 +1395,37 @@ button.savedGroupDeleteBtn {
   border: 1px solid #e0d28a;
 }
 
-.investmentSummary b {
+.safeInvestmentSummary b {
   color: #5a4300;
 }
 
-.investmentSummary span {
+.safeInvestmentSummary span {
   font-size: 18px;
   font-weight: 900;
 }
 
-.investmentSummary p {
+.safeInvestmentSummary p {
   grid-column: 1 / -1;
   margin: 0;
   font-size: 12px;
   color: #6a5200;
   font-weight: 800;
+}
+
+.totalInvestmentInput {
+  border: 2px solid #d6a700 !important;
+}
+
+
+/* v47: 자동 투자원금 + 주문상품 수정 + 캐릭터 고정 */
+.checkLine {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.checkLine input[type="checkbox"] {
+  width: 14px !important;
+  height: 14px !important;
+  margin: 0 !important;
 }

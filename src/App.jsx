@@ -2176,6 +2176,8 @@ export default function App() {
   }
 
 
+  const fixedTotalInvestment = toInt(totalInvestment);
+
   const currentInventoryCost = useMemo(() => {
     return products.reduce((sum, p) => sum + toInt(p.wholesale) * toInt(p.stock), 0);
   }, [products]);
@@ -2184,7 +2186,19 @@ export default function App() {
     return products.reduce((sum, p) => sum + toInt(p.retail) * toInt(p.stock), 0);
   }, [products]);
 
-  const fixedTotalInvestment = toInt(totalInvestment);
+
+  const allInventoryPurchaseCost = useMemo(() => {
+    return products.reduce((sum, p) => {
+      const initialQty = toInt(p.initial_stock || p.initialStock || p.original_stock || p.stock);
+      return sum + toInt(p.wholesale) * initialQty;
+    }, 0);
+  }, [products]);
+
+  const materialTotalCost = useMemo(() => {
+    return materials.reduce((sum, m) => sum + toInt(m.amount || m.price || m.cost || 0), 0);
+  }, [materials]);
+
+  const autoTotalInvestment = allInventoryPurchaseCost + materialTotalCost;
 
   function DashboardPage() {
     return (
