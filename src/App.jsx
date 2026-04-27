@@ -31,21 +31,7 @@ function StableSearchInput({ value, onChange, onEnter, placeholder = "검색", c
       autoCorrect="off"
       autoCapitalize="off"
       spellCheck="false"
-      onKeyDown={(e) => {
-        if (e.key === "Enter" && !composingRef.current) {
-          onEnter?.(e.currentTarget.value);
-        }
-      }}
-      onCompositionStart={() => { composingRef.current = true; }}
-      onCompositionEnd={(e) => {
-        composingRef.current = false;
-        commit(e.currentTarget.value);
-      }}
-      onChange={(e) => {
-        setLocalValue(e.target.value);
-        if (!composingRef.current) onChange(e.target.value);
-      }}
-    />
+
   );
 }
 
@@ -2124,11 +2110,17 @@ export default function App() {
       <>
         <div className="filterRow">
           <label>상품명</label>
-        <input id="manual-product-search-input" name="manual-product-search" defaultValue={search} placeholder="상품명 검색" autoComplete="off" />
-        <button onClick={runManualProductSearch}>검색</button>
-        <button onClick={clearManualProductSearch}>검색초기화</button>
-        <span className="manualSearchHint">입력 후 검색 버튼을 눌러주세요</span>
+        <input
+          id="manual-product-search-input"
+          name="manual-product-search"
+          defaultValue={search}
+          placeholder="상품명 검색"
+          autoComplete="off"
         />
+        <button type="button" onClick={runManualProductSearch}>검색</button>
+        <button type="button" onClick={clearManualProductSearch}>검색초기화</button>
+        <span className="manualSearchHint">입력 후 검색 버튼을 눌러주세요</span>
+        <span className="manualSearchHint">입력 후 검색 버튼을 눌러주세요</span>
         <button onClick={runManualProductSearch}>검색</button>
         <button onClick={clearManualProductSearch}>검색초기화</button>
         <span className="manualSearchHint">입력 후 검색 또는 Enter</span>

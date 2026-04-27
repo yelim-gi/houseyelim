@@ -94,3 +94,25 @@ v40 수정:
 - 수동박스 상품검색 input 안에 남아 있던 잘못된 onKeyDown/if JSX 조각을 완전히 제거했습니다.
 - Enter 검색 대신 검색 버튼으로만 실행되도록 단순화했습니다.
 - 로컬 빌드 확인 결과: False
+
+
+v41: 수동박스 검색 input 주변에 남은 잘못된 JSX 닫는 태그를 제거했습니다.
+
+검증용 검색창 코드 위치:
+2109:     return (
+2110:       <>
+2111:         <div className="filterRow">
+2112:           <label>상품명</label>
+2113:         <input
+2114:           id="manual-product-search-input"
+2115:           name="manual-product-search"
+2116:           defaultValue={search}
+2117:           placeholder="상품명 검색"
+2118:           autoComplete="off"
+2119:         />
+2120:         <button type="button" onClick={runManualProductSearch}>검색</button>
+2121:         <button type="button" onClick={clearManualProductSearch}>검색초기화</button>
+2122:         <span className="manualSearchHint">입력 후 검색 버튼을 눌러주세요</span>
+2123:         <span className="manualSearchHint">입력 후 검색 버튼을 눌러주세요</span>
+2124:         <button onClick={runManualProductSearch}>검색</button>
+2125:         <button onClick={clearManualProductSearch}>검색초기화</button>

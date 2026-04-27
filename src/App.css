@@ -1418,3 +1418,5 @@ input[name="manual-product-search"] {
   font-size: 16px !important;
   padding: 3px 6px !important;
 }
+
+/* v41: manual search JSX orphan tag cleanup */
