@@ -1038,10 +1038,7 @@ export default function App() {
 
   function showSelectedOrderItems() {
     if (!selectedOrderId) return alert("주문을 선택해줘.");
-    setSelectedOrderItemsOpen?.(true);
-    setTimeout(() => {
-      document.getElementById("v50-order-items-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 50);
+    document.querySelector(".v51OrderDetailPanel")?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   function downloadCustomerOrderExcel() {
@@ -2590,7 +2587,6 @@ export default function App() {
             <button onClick={() => { setOrderSearchCustomer(""); setOrderSearchDate(""); setOrderReorderOnly(false); setSelectedOrderId(null); }}>초기화</button>
             <button onClick={shipSelectedOrder}>출고확정</button>
             <button className="deleteBtn" onClick={cancelSelectedOrder}>주문취소</button>
-            <button onClick={showSelectedOrderItems}>주문상품보기</button>
             <button onClick={() => selectedOrderId ? copyOrderToManualComposition(selectedOrderId) : alert("복사할 주문을 선택해줘.")}>구성복사 수동박스</button>
             <button onClick={downloadOrdersExcel}>주문 엑셀</button>
             <button onClick={downloadCustomerOrderExcel}>고객용 엑셀</button>
@@ -2598,18 +2594,49 @@ export default function App() {
           <p className="statusLine">선택된 주문ID: {selectedOrderId || "-"}</p>
         </section>
         <section className="ordersGrid"><OrderTable title="주문접수 / 재고임시차감" rows={pendingOrders} /><OrderTable title="출고확정 / 발송완료" rows={shippedOrders} /></section>
-        <section className="panel orderDetailPanel">
-          <h2>선택 주문 상품 목록</h2>
-          <div className="tableWrap">
+        <section className="panel orderDetailPanel v51OrderDetailPanel">
+          <div className="v51OrderDetailHeader">
+            <h2>선택 주문 상품목록</h2>
+            <div className="v51OrderTotals">
+              <b>주문ID:</b> {selectedOrderId || "-"}　
+              <b>총 도매가합:</b> {money(selectedOrderItemsWholesaleTotal || v50SelectedOrderWholesaleTotal || 0)}　
+              <b>총 소비자가합:</b> {money(selectedOrderItemsRetailTotal || v50SelectedOrderRetailTotal || 0)}
+            </div>
+          </div>
+          <div className="tableWrap v51OrderItemsTableWrap">
             <table>
-              <thead><tr><th>상품ID</th><th>상품명</th><th>수량</th><th>도매가</th><th>소비자가</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>번호</th>
+                  <th>상품ID</th>
+                  <th>상품명</th>
+                  <th>캐릭터1</th>
+                  <th>캐릭터2</th>
+                  <th>카테고리</th>
+                  <th>수량</th>
+                  <th>도매가</th>
+                  <th>소비자가</th>
+                </tr>
+              </thead>
               <tbody>
-                {selectedOrderItems.map((x) => <tr key={x.id}><td>{x.product_id}</td><td title={x.name}>{x.name}</td><td>{x.qty}</td><td>{money(x.wholesale)}</td><td>{money(x.retail)}</td></tr>)}
-                {selectedOrderItems.length === 0 && <tr><td colSpan="5" className="empty">주문을 선택하고 주문상품보기를 눌러줘.</td></tr>}
+                {(selectedOrderItemsRows.length ? selectedOrderItemsRows : v50SelectedOrderItemsRows).map((x, i) => (
+                  <tr key={x.id || i}>
+                    <td>{i + 1}</td>
+                    <td>{x.product_id || x.id}</td>
+                    <td>{x.product_name || x.name || x.item_name || "-"}</td>
+                    <td>{x.char1 || "-"}</td>
+                    <td>{x.char2 || "-"}</td>
+                    <td>{x.category || "-"}</td>
+                    <td>{x.qty || 1}</td>
+                    <td>{money(x.wholesale || x.wholesale_price || x.cost || 0)}</td>
+                    <td>{money(x.retail || x.retail_price || x.consumer_price || 0)}</td>
+                  </tr>
+                ))}
+                {!selectedOrderId && <tr><td colSpan="9" className="empty">주문접수 또는 출고완료 표에서 주문을 클릭하면 상품목록이 여기에 표시됩니다.</td></tr>}
+                {selectedOrderId && (selectedOrderItemsRows.length ? selectedOrderItemsRows : v50SelectedOrderItemsRows).length === 0 && <tr><td colSpan="9" className="empty">이 주문의 상품목록이 없어요.</td></tr>}
               </tbody>
             </table>
           </div>
-
         </section>
       </>
     );
