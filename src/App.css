@@ -1485,3 +1485,52 @@ button.savedGroupDeleteBtn {
 .orderItemsTableWrap table {
   width: 100%;
 }
+
+
+/* v50: 정확한 투자원금 계산 + 주문상품목록 박스 */
+.v49InvestmentSummary,
+.v48InvestmentSummary {
+  margin-bottom: 18px !important;
+}
+
+.v49InvestmentSummary p,
+.v48InvestmentSummary p {
+  line-height: 1.45 !important;
+}
+
+.v50OrderItemsPanel {
+  margin: 18px 0 22px 0 !important;
+  padding: 12px !important;
+  border: 2px solid #d6c15c !important;
+  background: #fffdf2 !important;
+  clear: both !important;
+}
+
+.v50OrderItemsHeader {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin-bottom: 8px !important;
+}
+
+.v50OrderItemsHeader h3 {
+  margin: 0 !important;
+  font-size: 15px !important;
+}
+
+.v50OrderTotals {
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  color: #5a4300 !important;
+}
+
+.v50OrderItemsTableWrap {
+  max-height: 300px !important;
+  overflow: auto !important;
+  background: white !important;
+}
+
+.v50OrderItemsTableWrap table {
+  width: 100% !important;
+}

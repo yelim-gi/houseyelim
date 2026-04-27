@@ -1037,7 +1037,11 @@ export default function App() {
   }
 
   function showSelectedOrderItems() {
-    openSelectedOrderItemsPanel();
+    if (!selectedOrderId) return alert("주문을 선택해줘.");
+    setSelectedOrderItemsOpen?.(true);
+    setTimeout(() => {
+      document.getElementById("v50-order-items-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   }
 
   function downloadCustomerOrderExcel() {
@@ -2161,14 +2165,25 @@ export default function App() {
     return stockCost + v48MaterialsTotal;
   }, [products, v48MaterialsTotal]);
 
+
+  const v50SoldItemsWholesaleTotal = useMemo(() => {
+    return orderItems.reduce((sum, x) => sum + toInt(x.wholesale || x.wholesale_price || x.cost || 0) * toInt(x.qty || 1), 0);
+  }, [orderItems]);
+
+  const v50SoldItemsRetailTotal = useMemo(() => {
+    return orderItems.reduce((sum, x) => sum + toInt(x.retail || x.retail_price || x.consumer_price || 0) * toInt(x.qty || 1), 0);
+  }, [orderItems]);
+
+  const v50TotalInvestment = v48CurrentInventoryCost + v50SoldItemsWholesaleTotal + v48MaterialsTotal;
+
   function DashboardPage() {
     return (
       <>
         <div className="v49InvestmentSummary">
-          <div><b>총 투자원금</b><span>{money(v48TotalInvestment)}</span></div>
+          <div><b>총 투자원금</b><span>{money(v50TotalInvestment)}</span></div>
           <div><b>현재 남은 재고 매입가</b><span>{money(v48CurrentInventoryCost)}</span></div>
           <div><b>현재 남은 재고 소비자가</b><span>{money(v48CurrentInventoryRetail)}</span></div>
-          <p>총 투자원금은 전체 재고 도매가 총합 + 재료비 총합입니다. 매출/순이익/출고로 차감하지 않습니다.</p>
+          <p>총 투자원금은 현재 남은 재고 매입가 + 출고/주문상품 도매가합 + 재료비합입니다. 매출/순이익으로 차감하지 않습니다.</p>
         </div>
         <section className="cards">
           <div className="card"><span>상품종류</span><strong>{products.length.toLocaleString()}</strong></div>
@@ -2549,6 +2564,20 @@ export default function App() {
     setSelectedOrderItemsOpen(true);
   }
 
+
+  const v50SelectedOrderItemsRows = useMemo(() => {
+    if (!selectedOrderId) return [];
+    return orderItems.filter((x) => String(x.order_id) === String(selectedOrderId));
+  }, [orderItems, selectedOrderId]);
+
+  const v50SelectedOrderWholesaleTotal = useMemo(() => {
+    return v50SelectedOrderItemsRows.reduce((sum, x) => sum + toInt(x.wholesale || x.wholesale_price || x.cost || 0) * toInt(x.qty || 1), 0);
+  }, [v50SelectedOrderItemsRows]);
+
+  const v50SelectedOrderRetailTotal = useMemo(() => {
+    return v50SelectedOrderItemsRows.reduce((sum, x) => sum + toInt(x.retail || x.retail_price || x.consumer_price || 0) * toInt(x.qty || 1), 0);
+  }, [v50SelectedOrderItemsRows]);
+
   function OrdersPage() {
     return (
       <>
@@ -2580,43 +2609,6 @@ export default function App() {
               </tbody>
             </table>
           </div>
-
-        {selectedOrderItemsOpen && (
-          <div className="orderItemsPanel">
-            <div className="orderItemsPanelHeader">
-              <h3>선택 주문 상품목록</h3>
-              <button type="button" onClick={() => setSelectedOrderItemsOpen(false)}>닫기</button>
-            </div>
-            <div className="statusLine">
-              주문ID {selectedOrderId || "-"} | 총 도매가합 {money(selectedOrderItemsWholesaleTotal)} | 총 소비자가합 {money(selectedOrderItemsRetailTotal)}
-            </div>
-            <div className="tableWrap orderItemsTableWrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>번호</th><th>상품ID</th><th>상품명</th><th>캐릭터1</th><th>캐릭터2</th><th>카테고리</th><th>수량</th><th>도매가</th><th>소비자가</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedOrderItemsRows.map((x, i) => (
-                    <tr key={x.id || i}>
-                      <td>{i + 1}</td>
-                      <td>{x.product_id || x.id}</td>
-                      <td>{x.product_name || x.name || x.item_name || "-"}</td>
-                      <td>{x.char1 || "-"}</td>
-                      <td>{x.char2 || "-"}</td>
-                      <td>{x.category || "-"}</td>
-                      <td>{x.qty || 1}</td>
-                      <td>{money(x.wholesale || x.wholesale_price || x.cost || 0)}</td>
-                      <td>{money(x.retail || x.retail_price || x.consumer_price || 0)}</td>
-                    </tr>
-                  ))}
-                  {selectedOrderItemsRows.length === 0 && <tr><td colSpan="9" className="empty">주문상품이 없어요.</td></tr>}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
 
         </section>
       </>
