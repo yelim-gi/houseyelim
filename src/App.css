@@ -1408,3 +1408,13 @@ input[name="manual-product-search"] {
   outline: 3px solid #ffd84a !important;
   outline-offset: 1px !important;
 }
+
+
+/* v39: 수동박스 검색 JSX 문법 안전 버전 */
+#manual-product-search-input {
+  min-width: 190px !important;
+  background: #fff !important;
+  border: 2px solid #d6a700 !important;
+  font-size: 16px !important;
+  padding: 3px 6px !important;
+}

@@ -2124,17 +2124,8 @@ export default function App() {
       <>
         <div className="filterRow">
           <label>상품명</label>
-          <input
-          id="manual-product-search-input"
-          name="manual-product-search"
-          defaultValue={search}
-          placeholder="상품명 검색"
-          autoComplete="off"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") runManualProductSearch();
-          }}
-        /> {
-            if (e.key === "Enter") runManualProductSearch();
+          <input id="manual-product-search-input" name="manual-product-search" defaultValue={search} placeholder="상품명 검색" autoComplete="off" onKeyDown={(e) => { if (e.key === "Enter") { runManualProductSearch(); } }} /> {
+            if (e.key === "Enter") { runManualProductSearch(); }
           }}
         />
         <button onClick={runManualProductSearch}>검색</button>
