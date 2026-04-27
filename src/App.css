@@ -1408,3 +1408,80 @@ button.savedGroupDeleteBtn {
   height: 14px !important;
   margin: 0 !important;
 }
+
+
+/* v49: 대시보드 투자원금 / 주문상품 표 표시 / 랜덤스쿱 체크 위치 */
+.v49InvestmentSummary,
+.v48InvestmentSummary {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 8px;
+  margin: 8px 0;
+  padding: 8px;
+  border: 1px solid #d6c15c;
+  background: #fff8d8;
+}
+
+.v49InvestmentSummary div,
+.v48InvestmentSummary div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: #fffdf2;
+  border: 1px solid #e0d28a;
+}
+
+.v49InvestmentSummary b,
+.v48InvestmentSummary b {
+  color: #5a4300;
+}
+
+.v49InvestmentSummary span,
+.v48InvestmentSummary span {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.v49InvestmentSummary p,
+.v48InvestmentSummary p {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 12px;
+  color: #6a5200;
+  font-weight: 800;
+}
+
+.scoopStrictCheck {
+  background: #fff8d8;
+  border: 1px solid #d6c15c;
+  padding: 4px 8px;
+  font-weight: 900;
+}
+
+.orderItemsPanel {
+  margin: 10px 0;
+  padding: 8px;
+  border: 2px solid #d6c15c;
+  background: #fffdf2;
+}
+
+.orderItemsPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.orderItemsPanelHeader h3 {
+  margin: 0;
+}
+
+.orderItemsTableWrap {
+  max-height: 260px;
+  overflow: auto;
+}
+
+.orderItemsTableWrap table {
+  width: 100%;
+}

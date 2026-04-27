@@ -294,6 +294,7 @@ export default function App() {
 
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [selectedOrderItemsOpen, setSelectedOrderItemsOpen] = useState(false);
   const [selectedMaterialId, setSelectedMaterialId] = useState(null);
   const [isShipping, setIsShipping] = useState(false);
   const [isImportingExcel, setIsImportingExcel] = useState(false);
@@ -1036,13 +1037,7 @@ export default function App() {
   }
 
   function showSelectedOrderItems() {
-    if (!selectedOrderId) return alert("주문을 선택해줘.");
-    const rows = orderItems.filter((x) => String(x.order_id) === String(selectedOrderId));
-    if (rows.length === 0) return alert("주문상품이 없어요.");
-    const wholesaleTotal = rows.reduce((s, x) => s + toInt(x.wholesale || x.wholesale_price || x.cost || 0) * toInt(x.qty || 1), 0);
-    const retailTotal = rows.reduce((s, x) => s + toInt(x.retail || x.retail_price || x.consumer_price || 0) * toInt(x.qty || 1), 0);
-    const text = rows.map((x, i) => `${i + 1}. ${x.product_name || x.name || x.item_name || `상품ID ${x.product_id}`} | 수량 ${x.qty || 1} | 도매가 ${money(x.wholesale || x.wholesale_price || 0)} | 소비자가 ${money(x.retail || x.retail_price || 0)}`).join("\\n");
-    alert(`주문상품 목록\\n\\n${text}\\n\\n총 도매가합: ${money(wholesaleTotal)}\\n총 소비자가합: ${money(retailTotal)}`);
+    openSelectedOrderItemsPanel();
   }
 
   function downloadCustomerOrderExcel() {
@@ -2169,6 +2164,12 @@ export default function App() {
   function DashboardPage() {
     return (
       <>
+        <div className="v49InvestmentSummary">
+          <div><b>총 투자원금</b><span>{money(v48TotalInvestment)}</span></div>
+          <div><b>현재 남은 재고 매입가</b><span>{money(v48CurrentInventoryCost)}</span></div>
+          <div><b>현재 남은 재고 소비자가</b><span>{money(v48CurrentInventoryRetail)}</span></div>
+          <p>총 투자원금은 전체 재고 도매가 총합 + 재료비 총합입니다. 매출/순이익/출고로 차감하지 않습니다.</p>
+        </div>
         <section className="cards">
           <div className="card"><span>상품종류</span><strong>{products.length.toLocaleString()}</strong></div>
           <div className="card"><span>재고수량</span><strong>{totalStock.toLocaleString()}</strong></div>
@@ -2372,7 +2373,6 @@ export default function App() {
             <label>분배기준</label><select value={scoopMode} onChange={(e) => setScoopMode(e.target.value)}><option>상품 수 균등</option><option>소비자가 균등</option><option>도매가 균등</option><option>혼합 균형</option><option>카테고리 자동</option></select>
             <MultiCheckFilter label="캐릭터1" options={char1Options} selected={scoopChar1Selected} setSelected={setScoopChar1Selected} />
             <MultiCheckFilter label="캐릭터2" options={char2Options} selected={scoopChar2Selected} setSelected={setScoopChar2Selected} />
-                <label className="checkLine"><input type="checkbox" checked={v48ScoopStrictCharsOnly} onChange={(e) => setV48ScoopStrictCharsOnly(e.target.checked)} /> 원하는 캐릭터만 구성</label>
             <label>가격대</label><select value={scoopPrice} onChange={(e) => setScoopPrice(e.target.value)}>{PRICE_RANGES.map((v) => <option key={v}>{v}</option>)}</select>
             <label>소비자가상한</label><input value={scoopRetailLimit} onChange={(e) => setScoopRetailLimit(e.target.value)} />
             <button onClick={analyzeScoopCategories}>카테고리 자동 분석</button>
@@ -2437,6 +2437,7 @@ export default function App() {
                 <MultiCheckFilter label="캐릭터1" options={char1Options} selected={scoopChar1Selected} setSelected={setScoopChar1Selected} />
                 <MultiCheckFilter label="캐릭터2" options={char2Options} selected={scoopChar2Selected} setSelected={setScoopChar2Selected} />
               </div>
+              <label className="checkLine scoopStrictCheck"><input type="checkbox" checked={v48ScoopStrictCharsOnly} onChange={(e) => setV48ScoopStrictCharsOnly(e.target.checked)} /> 원하는 캐릭터만 구성</label>
               <button onClick={generateScoopRecommendations}>추천안 생성</button>
             </div>
 
@@ -2529,6 +2530,25 @@ export default function App() {
     );
   }
 
+
+  const selectedOrderItemsRows = useMemo(() => {
+    if (!selectedOrderId) return [];
+    return orderItems.filter((x) => String(x.order_id) === String(selectedOrderId));
+  }, [orderItems, selectedOrderId]);
+
+  const selectedOrderItemsWholesaleTotal = useMemo(() => {
+    return selectedOrderItemsRows.reduce((sum, x) => sum + toInt(x.wholesale || x.wholesale_price || x.cost || 0) * toInt(x.qty || 1), 0);
+  }, [selectedOrderItemsRows]);
+
+  const selectedOrderItemsRetailTotal = useMemo(() => {
+    return selectedOrderItemsRows.reduce((sum, x) => sum + toInt(x.retail || x.retail_price || x.consumer_price || 0) * toInt(x.qty || 1), 0);
+  }, [selectedOrderItemsRows]);
+
+  function openSelectedOrderItemsPanel() {
+    if (!selectedOrderId) return alert("주문을 선택해줘.");
+    setSelectedOrderItemsOpen(true);
+  }
+
   function OrdersPage() {
     return (
       <>
@@ -2560,6 +2580,44 @@ export default function App() {
               </tbody>
             </table>
           </div>
+
+        {selectedOrderItemsOpen && (
+          <div className="orderItemsPanel">
+            <div className="orderItemsPanelHeader">
+              <h3>선택 주문 상품목록</h3>
+              <button type="button" onClick={() => setSelectedOrderItemsOpen(false)}>닫기</button>
+            </div>
+            <div className="statusLine">
+              주문ID {selectedOrderId || "-"} | 총 도매가합 {money(selectedOrderItemsWholesaleTotal)} | 총 소비자가합 {money(selectedOrderItemsRetailTotal)}
+            </div>
+            <div className="tableWrap orderItemsTableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>번호</th><th>상품ID</th><th>상품명</th><th>캐릭터1</th><th>캐릭터2</th><th>카테고리</th><th>수량</th><th>도매가</th><th>소비자가</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedOrderItemsRows.map((x, i) => (
+                    <tr key={x.id || i}>
+                      <td>{i + 1}</td>
+                      <td>{x.product_id || x.id}</td>
+                      <td>{x.product_name || x.name || x.item_name || "-"}</td>
+                      <td>{x.char1 || "-"}</td>
+                      <td>{x.char2 || "-"}</td>
+                      <td>{x.category || "-"}</td>
+                      <td>{x.qty || 1}</td>
+                      <td>{money(x.wholesale || x.wholesale_price || x.cost || 0)}</td>
+                      <td>{money(x.retail || x.retail_price || x.consumer_price || 0)}</td>
+                    </tr>
+                  ))}
+                  {selectedOrderItemsRows.length === 0 && <tr><td colSpan="9" className="empty">주문상품이 없어요.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         </section>
       </>
     );
