@@ -1380,3 +1380,16 @@ input[name="manual-product-search"]:focus {
   outline: 3px solid #ffd84a !important;
   outline-offset: 1px !important;
 }
+
+
+/* v37: 수동박스 검색은 입력 후 버튼/Enter로 실행 */
+.manualSearchHint {
+  font-size: 11px;
+  color: #7a6500;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+input[name="manual-product-search"] {
+  min-width: 170px !important;
+}

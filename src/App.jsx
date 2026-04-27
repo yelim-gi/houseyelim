@@ -4,7 +4,7 @@ import { supabase } from "./supabase";
 
 const ADMIN_EMAIL = "qzwxec88888@gmail.com";
 
-function StableSearchInput({ value, onChange, placeholder = "검색", className = "", inputName = "stable-search" }) {
+function StableSearchInput({ value, onChange, onEnter, placeholder = "검색", className = "", inputName = "stable-search" }) {
   const [localValue, setLocalValue] = React.useState(value || "");
   const composingRef = React.useRef(false);
   const inputRef = React.useRef(null);
@@ -31,6 +31,11 @@ function StableSearchInput({ value, onChange, placeholder = "검색", className 
       autoCorrect="off"
       autoCapitalize="off"
       spellCheck="false"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && !composingRef.current) {
+          onEnter?.(e.currentTarget.value);
+        }
+      }}
       onCompositionStart={() => { composingRef.current = true; }}
       onCompositionEnd={(e) => {
         composingRef.current = false;
@@ -327,6 +332,7 @@ export default function App() {
   const [isImportingExcel, setIsImportingExcel] = useState(false);
 
   const [search, setSearch] = useState("");
+  const [manualSearchDraft, setManualSearchDraft] = useState("");
   const [char1Selected, setChar1Selected] = useState([]);
   const [char2Selected, setChar2Selected] = useState([]);
   const [categoryFilter, setCategoryFilter] = useState("전체");
@@ -670,6 +676,7 @@ export default function App() {
 
   function resetFilters() {
     setSearch("");
+    setManualSearchDraft("");
     setChar1Selected([]);
     setChar2Selected([]);
     setCategoryFilter("전체");
@@ -2118,7 +2125,9 @@ export default function App() {
       <>
         <div className="filterRow">
           <label>상품명</label>
-          <StableSearchInput value={search} onChange={setSearch} placeholder="상품명 검색" inputName="manual-product-search" />
+          <StableSearchInput value={manualSearchDraft} onChange={setManualSearchDraft} onEnter={setSearch} placeholder="상품명 검색" inputName="manual-product-search" />
+        <button onClick={() => setSearch(manualSearchDraft)}>검색</button>
+        <span className="manualSearchHint">입력 후 검색 또는 Enter</span>
           <MultiCheckFilter label="캐릭터1" options={char1Options} selected={char1Selected} setSelected={setChar1Selected} />
           <MultiCheckFilter label="캐릭터2" options={char2Options} selected={char2Selected} setSelected={setChar2Selected} />
           <label>카테고리</label>
