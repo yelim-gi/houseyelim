@@ -2077,9 +2077,7 @@ export default function App() {
       <>
         <div className="filterRow">
           <label>상품명</label>
-          <input id="manual-product-search-input" name="manual-product-search" defaultValue={search} placeholder="상품명 검색" autoComplete="off" />
-        <button type="button" onClick={runManualProductSearch}>검색</button>
-        <button type="button" onClick={clearManualProductSearch}>검색초기화</button>
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="상품명 검색" />
           <MultiCheckFilter label="캐릭터1" options={char1Options} selected={char1Selected} setSelected={setChar1Selected} />
           <MultiCheckFilter label="캐릭터2" options={char2Options} selected={char2Selected} setSelected={setChar2Selected} />
           <label>카테고리</label>
@@ -2174,7 +2172,7 @@ export default function App() {
           </div>
         </section>
         <section className="panel">
-          <FilterBox />
+          {FilterBox()}
           <div className="buttonRow">
             <label className="uploadBtn">엑셀 불러오기<input type="file" accept=".xlsx,.xls,.csv" onChange={handleExcelUpload} /></label>
             <button onClick={downloadInventoryExcel}>현재 재고 엑셀</button>
@@ -2196,7 +2194,7 @@ export default function App() {
     const selectedManual = manualRecommendations[selectedManualIndex];
     return (
       <>
-        <section className="panel"><FilterBox /></section>
+        <section className="panel">{FilterBox()}</section>
         <section className="splitLayout">
           <div className="panel">
             <h2>조건 상품 리스트</h2>
@@ -2744,18 +2742,6 @@ export default function App() {
         </form>
       </div>
     );
-  }
-
-
-  function runManualProductSearch() {
-    const el = document.getElementById("manual-product-search-input");
-    setSearch(el ? el.value : "");
-  }
-
-  function clearManualProductSearch() {
-    const el = document.getElementById("manual-product-search-input");
-    if (el) el.value = "";
-    setSearch("");
   }
 
   function renderPage() {
