@@ -675,8 +675,7 @@ export default function App() {
   const canceledOrders = filteredOrders.filter((o) => o.status === "취소");
 
   function resetFilters() {
-    setSearch("");
-    setManualSearchDraft("");
+    clearManualProductSearch();
     setChar1Selected([]);
     setChar2Selected([]);
     setCategoryFilter("전체");
@@ -2125,8 +2124,21 @@ export default function App() {
       <>
         <div className="filterRow">
           <label>상품명</label>
-          <StableSearchInput value={manualSearchDraft} onChange={setManualSearchDraft} onEnter={setSearch} placeholder="상품명 검색" inputName="manual-product-search" />
-        <button onClick={() => setSearch(manualSearchDraft)}>검색</button>
+          <input
+          id="manual-product-search-input"
+          name="manual-product-search"
+          defaultValue={search}
+          placeholder="상품명 검색"
+          autoComplete="off"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") runManualProductSearch();
+          }}
+        /> {
+            if (e.key === "Enter") runManualProductSearch();
+          }}
+        />
+        <button onClick={runManualProductSearch}>검색</button>
+        <button onClick={clearManualProductSearch}>검색초기화</button>
         <span className="manualSearchHint">입력 후 검색 또는 Enter</span>
           <MultiCheckFilter label="캐릭터1" options={char1Options} selected={char1Selected} setSelected={setChar1Selected} />
           <MultiCheckFilter label="캐릭터2" options={char2Options} selected={char2Selected} setSelected={setChar2Selected} />
@@ -2813,6 +2825,18 @@ export default function App() {
         }
       });
     };
+  }
+
+
+  function runManualProductSearch() {
+    const el = document.getElementById("manual-product-search-input");
+    setSearch(el ? el.value : "");
+  }
+
+  function clearManualProductSearch() {
+    const el = document.getElementById("manual-product-search-input");
+    if (el) el.value = "";
+    setSearch("");
   }
 
   function renderPage() {

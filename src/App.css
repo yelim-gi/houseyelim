@@ -1393,3 +1393,18 @@ input[name="manual-product-search"]:focus {
 input[name="manual-product-search"] {
   min-width: 170px !important;
 }
+
+
+/* v38: 수동박스 상품검색 완전 비제어 input */
+#manual-product-search-input {
+  min-width: 190px !important;
+  background: #fff !important;
+  border: 2px solid #d6a700 !important;
+  font-size: 16px !important;
+  padding: 3px 6px !important;
+}
+
+#manual-product-search-input:focus {
+  outline: 3px solid #ffd84a !important;
+  outline-offset: 1px !important;
+}
