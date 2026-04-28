@@ -1585,3 +1585,20 @@ button.savedGroupDeleteBtn {
 .ordersGrid {
   margin-bottom: 18px !important;
 }
+
+
+/* v52: 재고 수정 패널 */
+.v52EditProductPanel {
+  margin: 12px 0 !important;
+  padding: 10px !important;
+  border: 2px solid #d6c15c !important;
+  background: #fffdf2 !important;
+}
+
+.v52EditProductPanel h3 {
+  margin: 0 0 8px 0 !important;
+}
+
+.v52EditProductPanel input {
+  min-width: 120px !important;
+}

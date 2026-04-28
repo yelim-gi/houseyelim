@@ -324,6 +324,7 @@ export default function App() {
   const [orderSearchDate, setOrderSearchDate] = useState("");
   const [orderReorderOnly, setOrderReorderOnly] = useState(false);
 
+  const [editProductForm, setEditProductForm] = useState(null);
   const [productForm, setProductForm] = useState({
     name: "", char1: "", char2: "", category: "", stock: "", wholesale: "", retail: "", hidden: false,
   });
@@ -923,11 +924,15 @@ export default function App() {
     getOrders();
     getOrderItems();
     setActiveTab("주문관리");
+    return true;
   }
 
   async function createOrderFromCompose() {
-    await createOrderFromItems(composeItems, customer, memo, reorder, salePrice, feeRate);
-    clearCompose();
+    const result = await createOrderFromItems(composeItems, customer, memo, reorder, salePrice, feeRate);
+    if (result === true) {
+      const clearOk = window.confirm("박스출고가 완료됐어요. 현재 조합 리스트를 비울까요?\n\n취소를 누르면 현재 조합 리스트가 그대로 유지됩니다.");
+      if (clearOk) clearCompose();
+    }
   }
 
   async function restoreStockByOrder(orderId) {
@@ -2211,6 +2216,76 @@ export default function App() {
     );
   }
 
+
+  function startEditSelectedProduct() {
+    const p = products.find((x) => String(x.id) === String(selectedProductId));
+    if (!p) return alert("수정할 상품을 선택해줘.");
+    setEditProductForm({
+      id: p.id,
+      name: p.name || "",
+      char1: p.char1 || "",
+      char2: p.char2 || "",
+      category: p.category || "",
+      stock: String(toInt(p.stock)),
+      wholesale: String(toInt(p.wholesale)),
+      retail: String(toInt(p.retail)),
+      hidden: toInt(p.hidden) === 1,
+    });
+  }
+
+  function cancelEditProduct() {
+    setEditProductForm(null);
+  }
+
+  async function saveEditedProduct() {
+    if (!editProductForm?.id) return alert("수정할 상품이 없어요.");
+
+    const payload = {
+      name: editProductForm.name || "",
+      char1: editProductForm.char1 || "",
+      char2: editProductForm.char2 || "",
+      category: editProductForm.category || "",
+      stock: toInt(editProductForm.stock),
+      wholesale: toInt(editProductForm.wholesale),
+      retail: toInt(editProductForm.retail),
+      hidden: editProductForm.hidden ? 1 : 0,
+    };
+
+    const { error } = await supabase.from("products").update(payload).eq("id", editProductForm.id);
+    if (error) return alert("재고 상품 수정 실패: " + error.message);
+
+    const linked = orderItems.filter((x) => String(x.product_id) === String(editProductForm.id));
+    if (linked.length > 0) {
+      const ok = window.confirm(
+        `이 상품이 기존 주문/출고 상품목록 ${linked.length}건에 포함되어 있어요.\n\n` +
+        "해당 주문/출고건의 상품명, 캐릭터1, 캐릭터2, 카테고리, 도매가, 소비자가에도 수정사항을 적용할까요?"
+      );
+
+      if (ok) {
+        const { error: itemError } = await supabase
+          .from("order_items")
+          .update({
+            name: payload.name,
+            product_name: payload.name,
+            char1: payload.char1,
+            char2: payload.char2,
+            category: payload.category,
+            wholesale: payload.wholesale,
+            retail: payload.retail,
+            wholesale_price: payload.wholesale,
+            retail_price: payload.retail,
+          })
+          .eq("product_id", editProductForm.id);
+        if (itemError) return alert("주문/출고 상품목록 반영 실패: " + itemError.message);
+      }
+    }
+
+    alert("상품 수정 완료!");
+    setEditProductForm(null);
+    getProducts();
+    getOrderItems();
+  }
+
   function InventoryPage() {
     return (
       <>
@@ -2240,7 +2315,31 @@ export default function App() {
             <button onClick={showCharacterShortage}>부족 캐릭터 보기</button>
             <button className="deleteBtn" onClick={() => deleteProduct(selectedProductId)}>상품 삭제</button>
           </div>
-          <ProductTable mode="inventory" />
+          
+        {editProductForm && (
+          <section className="panel v52EditProductPanel">
+            <h3>선택 상품 수정</h3>
+            <div className="filterRow">
+              <label>상품명</label><input value={editProductForm.name} onChange={(e) => setEditProductForm({ ...editProductForm, name: e.target.value })} />
+              <label>캐릭터1</label><input value={editProductForm.char1} onChange={(e) => setEditProductForm({ ...editProductForm, char1: e.target.value })} />
+              <label>캐릭터2</label><input value={editProductForm.char2} onChange={(e) => setEditProductForm({ ...editProductForm, char2: e.target.value })} />
+              <label>카테고리</label><input value={editProductForm.category} onChange={(e) => setEditProductForm({ ...editProductForm, category: e.target.value })} />
+            </div>
+            <div className="filterRow">
+              <label>재고수량</label><input value={editProductForm.stock} onChange={(e) => setEditProductForm({ ...editProductForm, stock: e.target.value })} />
+              <label>도매가</label><input value={editProductForm.wholesale} onChange={(e) => setEditProductForm({ ...editProductForm, wholesale: e.target.value })} />
+              <label>소비자가</label><input value={editProductForm.retail} onChange={(e) => setEditProductForm({ ...editProductForm, retail: e.target.value })} />
+              <label className="checkLine"><input type="checkbox" checked={editProductForm.hidden} onChange={(e) => setEditProductForm({ ...editProductForm, hidden: e.target.checked })} /> 히든템</label>
+            </div>
+            <div className="buttonRow">
+              <button type="button" onClick={saveEditedProduct}>수정완료</button>
+              <button type="button" onClick={cancelEditProduct}>수정취소</button>
+            </div>
+            <p className="statusLine">수정완료 시 기존 주문/출고건에 포함된 상품이면 반영 여부를 물어봅니다.</p>
+          </section>
+        )}
+
+        <ProductTable mode="inventory" />
         </section>
       </>
     );
@@ -2624,9 +2723,9 @@ export default function App() {
                     <td>{i + 1}</td>
                     <td>{x.product_id || x.id}</td>
                     <td>{x.product_name || x.name || x.item_name || "-"}</td>
-                    <td>{x.char1 || "-"}</td>
-                    <td>{x.char2 || "-"}</td>
-                    <td>{x.category || "-"}</td>
+                    <td>{x.char1 || products.find((p) => String(p.id) === String(x.product_id))?.char1 || "-"}</td>
+                    <td>{x.char2 || products.find((p) => String(p.id) === String(x.product_id))?.char2 || "-"}</td>
+                    <td>{x.category || products.find((p) => String(p.id) === String(x.product_id))?.category || "-"}</td>
                     <td>{x.qty || 1}</td>
                     <td>{money(x.wholesale || x.wholesale_price || x.cost || 0)}</td>
                     <td>{money(x.retail || x.retail_price || x.consumer_price || 0)}</td>
