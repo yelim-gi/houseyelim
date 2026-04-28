@@ -1602,3 +1602,20 @@ button.savedGroupDeleteBtn {
 .v52EditProductPanel input {
   min-width: 120px !important;
 }
+
+
+/* v53: 재고 수정 버튼/패널 확실히 표시 */
+.v53EditProductPanel {
+  margin: 12px 0 !important;
+  padding: 10px !important;
+  border: 2px solid #d6c15c !important;
+  background: #fffdf2 !important;
+}
+
+.v53EditProductPanel h3 {
+  margin: 0 0 8px 0 !important;
+}
+
+.v53EditProductPanel input {
+  min-width: 120px !important;
+}

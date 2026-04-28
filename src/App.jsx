@@ -2134,7 +2134,7 @@ export default function App() {
             {filteredProducts.map((p) => (
               <tr key={p.id} onClick={() => setSelectedProductId(p.id)} className={selectedProductId === p.id ? "selectedRow" : ""} title={p.name}>
                 <td>{p.id}</td><td>{p.name}</td><td>{p.char1}</td><td>{p.char2}</td><td>{p.category}</td><td>{p.stock}</td><td>{money(p.wholesale)}</td><td>{money(p.retail)}</td><td>{p.hidden ? "Y" : ""}</td>
-                <td>{mode === "compose" ? <button onClick={(e) => { e.stopPropagation(); addToCompose(p); }}>추가</button> : <button className="deleteBtn" onClick={(e) => { e.stopPropagation(); deleteProduct(p.id); }}>삭제</button>}</td>
+                <td>{mode === "compose" ? <button onClick={(e) => { e.stopPropagation(); addToCompose(p); }}>추가</button> : <><button onClick={(e) => { e.stopPropagation(); startEditProductById(p.id); }}>수정</button><button className="deleteBtn" onClick={(e) => { e.stopPropagation(); deleteProduct(p.id); }}>삭제</button></>}</td>
               </tr>
             ))}
             {filteredProducts.length === 0 && <tr><td colSpan="10" className="empty">등록된 상품이 없어요.</td></tr>}
@@ -2286,6 +2286,84 @@ export default function App() {
     getOrderItems();
   }
 
+
+  function startEditProductById(productId) {
+    const p = products.find((x) => String(x.id) === String(productId));
+    if (!p) return alert("수정할 상품을 선택해줘.");
+    setSelectedProductId(p.id);
+    setEditProductForm({
+      id: p.id,
+      name: p.name || "",
+      char1: p.char1 || "",
+      char2: p.char2 || "",
+      category: p.category || "",
+      stock: String(toInt(p.stock)),
+      wholesale: String(toInt(p.wholesale)),
+      retail: String(toInt(p.retail)),
+      hidden: toInt(p.hidden) === 1,
+    });
+  }
+
+  function startEditSelectedProduct() {
+    if (!selectedProductId) return alert("수정할 상품을 선택해줘.");
+    startEditProductById(selectedProductId);
+  }
+
+  function cancelEditProduct() {
+    setEditProductForm(null);
+  }
+
+  async function saveEditedProduct() {
+    if (!editProductForm?.id) return alert("수정할 상품이 없어요.");
+
+    const payload = {
+      name: editProductForm.name || "",
+      char1: editProductForm.char1 || "",
+      char2: editProductForm.char2 || "",
+      category: editProductForm.category || "",
+      stock: toInt(editProductForm.stock),
+      wholesale: toInt(editProductForm.wholesale),
+      retail: toInt(editProductForm.retail),
+      hidden: editProductForm.hidden ? 1 : 0,
+    };
+
+    const { error } = await supabase.from("products").update(payload).eq("id", editProductForm.id);
+    if (error) return alert("재고 상품 수정 실패: " + error.message);
+
+    const linked = orderItems.filter((x) => String(x.product_id) === String(editProductForm.id));
+    if (linked.length > 0) {
+      const ok = window.confirm(
+        `이 상품이 기존 주문/출고 상품목록 ${linked.length}건에 포함되어 있어요.\n\n` +
+        "해당 주문/출고건의 상품명, 캐릭터1, 캐릭터2, 카테고리, 도매가, 소비자가에도 수정사항을 적용할까요?\n\n" +
+        "확인 = 기존 주문/출고건에도 반영\n취소 = 재고관리 상품만 수정"
+      );
+
+      if (ok) {
+        const { error: itemError } = await supabase
+          .from("order_items")
+          .update({
+            name: payload.name,
+            product_name: payload.name,
+            char1: payload.char1,
+            char2: payload.char2,
+            category: payload.category,
+            wholesale: payload.wholesale,
+            retail: payload.retail,
+            wholesale_price: payload.wholesale,
+            retail_price: payload.retail,
+          })
+          .eq("product_id", editProductForm.id);
+
+        if (itemError) return alert("주문/출고 상품목록 반영 실패: " + itemError.message);
+      }
+    }
+
+    alert("상품 수정 완료!");
+    setEditProductForm(null);
+    getProducts();
+    getOrderItems();
+  }
+
   function InventoryPage() {
     return (
       <>
@@ -2313,11 +2391,13 @@ export default function App() {
             <button onClick={showBackupListAndRestore}>백업 목록 선택복구</button>
             <button onClick={showChar2Values}>캐릭터2 목록 확인</button>
             <button onClick={showCharacterShortage}>부족 캐릭터 보기</button>
+            <button type="button" onClick={startEditSelectedProduct}>상품 수정</button>
             <button className="deleteBtn" onClick={() => deleteProduct(selectedProductId)}>상품 삭제</button>
           </div>
-          
+
+        
         {editProductForm && (
-          <section className="panel v52EditProductPanel">
+          <section className="panel v53EditProductPanel">
             <h3>선택 상품 수정</h3>
             <div className="filterRow">
               <label>상품명</label><input value={editProductForm.name} onChange={(e) => setEditProductForm({ ...editProductForm, name: e.target.value })} />
