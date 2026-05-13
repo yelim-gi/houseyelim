@@ -2560,9 +2560,7 @@ export default function App() {
             <label className="checkLine"><input checked={productForm.hidden} onChange={(e) => setProductForm({ ...productForm, hidden: e.target.checked })} type="checkbox" /> 히든</label>
             <button onClick={addProduct}>상품 저장</button>
           </div>
-        </section>
-        <section className="panel">
-          <FilterBox />
+
           <div className="buttonRow">
             <label className="uploadBtn">엑셀 불러오기<input type="file" accept=".xlsx,.xls,.csv" onChange={handleExcelUpload} /></label>
             <button onClick={downloadInventoryExcel}>현재 재고 엑셀</button>
@@ -2575,6 +2573,9 @@ export default function App() {
             <button type="button" onClick={startEditSelectedProduct}>상품 수정</button>
             <button className="deleteBtn" onClick={() => deleteProduct(selectedProductId)}>상품 삭제</button>
           </div>
+        </section>
+        <section className="panel">
+          <FilterBox />
 
         
         {editProductForm && (
@@ -2627,7 +2628,7 @@ export default function App() {
           )}
         </section>
 
-        <ProductTable mode="inventory" />
+        <div className="inventoryResultArea"><ProductTable mode="inventory" /></div>
         </section>
       </>
     );

@@ -1802,3 +1802,85 @@ button.savedGroupDeleteBtn {
     max-height: 60vh !important;
   }
 }
+
+
+/* v66: 재고관리 검색 결과 위치/높이 강제 수정 */
+.inventoryPageFixed {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+/* 결과 영역을 검색 조건 바로 아래로 */
+.inventoryResultArea {
+  order: 2 !important;
+  margin-top: 8px !important;
+  margin-bottom: 12px !important;
+  width: 100% !important;
+  min-height: 220px !important;
+}
+
+/* 재고관리 안의 표는 한두 개 결과여도 넓게 보여야 함 */
+.inventoryResultArea .tableWrap,
+.inventoryPageFixed > .tableWrap {
+  min-height: 220px !important;
+  height: 220px !important;
+  max-height: 460px !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  background: #fff !important;
+}
+
+/* 테이블 자체가 납작하게 눌리지 않게 */
+.inventoryResultArea table,
+.inventoryPageFixed > .tableWrap table {
+  width: 100% !important;
+  table-layout: auto !important;
+}
+
+.inventoryResultArea tbody,
+.inventoryPageFixed > .tableWrap tbody {
+  min-height: 160px !important;
+}
+
+/* 행 높이 확보 */
+.inventoryResultArea tr,
+.inventoryPageFixed > .tableWrap tr {
+  min-height: 28px !important;
+  height: 28px !important;
+}
+
+.inventoryResultArea th,
+.inventoryResultArea td,
+.inventoryPageFixed > .tableWrap th,
+.inventoryPageFixed > .tableWrap td {
+  padding: 5px 6px !important;
+  vertical-align: middle !important;
+}
+
+/* 빈칸을 만드는 요소들을 표 아래로 밀거나 높이 제거 */
+.inventoryPageFixed .selectedPreview,
+.inventoryPageFixed .previewBox,
+.inventoryPageFixed .listBox,
+.inventoryPageFixed .resultBox,
+.inventoryPageFixed .recommendBox {
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+/* 백업/관리 버튼 줄은 결과표 아래로 보이게 */
+.inventoryPageFixed .buttonRow {
+  order: 5 !important;
+  margin-top: 10px !important;
+}
+
+/* 모바일에서도 결과표가 최소 높이 유지 */
+@media (max-width: 900px) {
+  .inventoryResultArea .tableWrap,
+  .inventoryPageFixed > .tableWrap {
+    min-height: 240px !important;
+    height: 240px !important;
+    max-height: 60vh !important;
+  }
+}
