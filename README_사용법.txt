@@ -154,3 +154,9 @@ v58 수정:
 v59 수정:
 - startBulkEditProducts undefined 오류 방지를 위해 v59 전용 함수명으로 전체 교체
 - 빌드된 JS에 기존 startBulkEditProducts 문자열이 남아있는지 검증
+
+
+v60 수정:
+- 대시보드 현재 남은 재고 소비자가 계산 오류 수정
+- 소비자가 계산에서 price/sale_price 같은 주문/판매 총액성 컬럼 제외
+- 현재 남은 재고 소비자가 = 상품 소비자가(retail/retail_price/consumer_price) × 현재재고(stock)로 고정

@@ -206,11 +206,11 @@ function v48SelectedChars(a = [], b = []) {
 
 
 function productRetailValue(p) {
-  return toInt(p.retail || p.retail_price || p.consumer_price || p.price || p.sale_price || 0);
+  return toInt(p.retail || p.retail_price || p.consumer_price || p.retailPrice || p.consumerPrice || 0);
 }
 
 function productWholesaleValue(p) {
-  return toInt(p.wholesale || p.wholesale_price || p.cost || 0);
+  return toInt(p.wholesale || p.wholesale_price || p.cost || p.wholesalePrice || 0);
 }
 
 function compactText(v, max = 42) {
