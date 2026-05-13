@@ -3496,15 +3496,15 @@ export default function App() {
 
   function renderPage() {
     try {
-      if (activeTab === "대시보드") return <DashboardPage />;
-      if (activeTab === "재고관리") return <InventoryPage />;
-      if (activeTab === "수동박스") return <ComposePage />;
-      if (activeTab === "랜덤스쿱") return <ScoopPage />;
-      if (activeTab === "주문관리") return <OrdersPage />;
-      if (activeTab === "택배접수") return <ShippingRegisterPage />;
-      if (activeTab === "취소보관함") return <TrashPage />;
-      if (activeTab === "설정") return <SettingsPage />;
-      return <DashboardPage />;
+      if (activeTab === "대시보드") return DashboardPage();
+      if (activeTab === "재고관리") return InventoryPage();
+      if (activeTab === "수동박스") return ComposePage();
+      if (activeTab === "랜덤스쿱") return ScoopPage();
+      if (activeTab === "주문관리") return OrdersPage();
+      if (activeTab === "택배접수") return ShippingRegisterPage();
+      if (activeTab === "취소보관함") return TrashPage();
+      if (activeTab === "설정") return SettingsPage();
+      return DashboardPage();
     } catch (err) {
       console.error(err);
       return (
