@@ -2548,7 +2548,7 @@ export default function App() {
   function InventoryPage() {
     return (
       <>
-        <section className="panel">
+        <section className="panel inventoryPageFixed">
           <div className="filterRow">
             <input value={productForm.name} onChange={(e) => setProductForm({ ...productForm, name: e.target.value })} placeholder="상품명" />
             <input value={productForm.char1} onChange={(e) => setProductForm({ ...productForm, char1: e.target.value })} placeholder="캐릭터1" />

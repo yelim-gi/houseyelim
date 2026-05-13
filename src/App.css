@@ -1736,3 +1736,69 @@ button.savedGroupDeleteBtn {
   border: 2px solid #d6c15c !important;
   background: #fffdf2 !important;
 }
+
+
+/* v65: 재고관리 검색 결과가 아래로 밀리는 문제 수정 */
+.inventoryPageFixed {
+  min-height: 0 !important;
+  height: auto !important;
+  display: block !important;
+  padding-bottom: 12px !important;
+}
+
+.inventoryPageFixed .tableWrap,
+.inventoryPageFixed table {
+  margin-top: 6px !important;
+}
+
+.inventoryPageFixed .tableWrap {
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: 460px !important;
+  overflow: auto !important;
+}
+
+.inventoryPageFixed .selectedPreview,
+.inventoryPageFixed .recommendBox,
+.inventoryPageFixed .resultBox,
+.inventoryPageFixed .listBox,
+.inventoryPageFixed .previewBox {
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: 360px !important;
+}
+
+.inventoryPageFixed tbody .empty,
+.inventoryPageFixed .empty {
+  height: 34px !important;
+  padding: 8px !important;
+}
+
+.inventoryPageFixed .buttonRow {
+  margin: 6px 0 !important;
+  flex-wrap: wrap !important;
+}
+
+.inventoryPageFixed table tbody tr {
+  height: 26px !important;
+}
+
+.inventoryPageFixed th,
+.inventoryPageFixed td {
+  padding-top: 3px !important;
+  padding-bottom: 3px !important;
+}
+
+.productTableWrap,
+.conditionProductList,
+.inventoryTableWrap {
+  min-height: 0 !important;
+  max-height: 460px !important;
+  overflow: auto !important;
+}
+
+@media (max-width: 900px) {
+  .inventoryPageFixed .tableWrap {
+    max-height: 60vh !important;
+  }
+}
