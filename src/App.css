@@ -1692,8 +1692,7 @@ button.savedGroupDeleteBtn {
 }
 
 
-/* v58: 재고관리 일괄수정 스코프 오류 복구 */
-.v58BulkEditPanel,
+/* v57: 재고관리 일괄수정 함수 누락 복구 */
 .v57BulkEditPanel,
 .v54BulkEditPanel {
   margin: 12px 0 !important;
@@ -1702,11 +1701,27 @@ button.savedGroupDeleteBtn {
   background: #fffdf2 !important;
 }
 
-.v58BulkEditPanel input,
-.v58BulkEditPanel select,
 .v57BulkEditPanel input,
 .v57BulkEditPanel select,
 .v54BulkEditPanel input,
 .v54BulkEditPanel select {
   min-width: 110px !important;
+}
+
+
+/* v58: 재고 체크 위치 / 히든 UI 제거 / 택배접수 다운로드 개선 */
+.bulkActionCell {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.bulkActionCell input[type="checkbox"] {
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 4px 0 0 !important;
+}
+
+.bulkActionCell button {
+  padding: 2px 6px !important;
 }
