@@ -1884,3 +1884,126 @@ button.savedGroupDeleteBtn {
     max-height: 60vh !important;
   }
 }
+
+
+/* v67: 재고관리/수동박스 검색 결과 위 큰 공백 완전 제거 */
+.inventoryPageFixed,
+.composePageFixed {
+  display: block !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding-bottom: 10px !important;
+}
+
+/* 이전 버전에서 order로 밀던 것 무효화 */
+.inventoryPageFixed .buttonRow,
+.composePageFixed .buttonRow,
+.inventoryResultArea,
+.composeConditionResultArea {
+  order: initial !important;
+}
+
+/* 조회결과 바로 아래 빈 공간 제거 */
+.inventoryPageFixed > * ,
+.composePageFixed > * {
+  margin-bottom: 6px !important;
+}
+
+.inventoryPageFixed .statusLine,
+.composePageFixed .statusLine {
+  margin: 4px 0 6px 0 !important;
+  padding: 0 !important;
+}
+
+/* 상품 결과표를 바로 위로 당김 */
+.inventoryResultArea,
+.composeConditionResultArea {
+  margin-top: 4px !important;
+  margin-bottom: 8px !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+/* 표 컨테이너는 작게 눌리지 않게, 하지만 위쪽에 바로 보이게 */
+.inventoryResultArea .tableWrap,
+.composeConditionResultArea .tableWrap,
+.inventoryPageFixed .tableWrap,
+.composePageFixed .tableWrap {
+  min-height: 150px !important;
+  height: auto !important;
+  max-height: 360px !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  background: #fff !important;
+}
+
+/* 한두 개 결과여도 두 줄 이상 편하게 보이도록 */
+.inventoryResultArea table,
+.composeConditionResultArea table {
+  width: 100% !important;
+  table-layout: auto !important;
+}
+
+.inventoryResultArea tbody tr,
+.composeConditionResultArea tbody tr,
+.inventoryPageFixed tbody tr,
+.composePageFixed tbody tr {
+  height: 30px !important;
+  min-height: 30px !important;
+}
+
+.inventoryResultArea th,
+.inventoryResultArea td,
+.composeConditionResultArea th,
+.composeConditionResultArea td,
+.inventoryPageFixed th,
+.inventoryPageFixed td,
+.composePageFixed th,
+.composePageFixed td {
+  padding: 5px 6px !important;
+  line-height: 1.25 !important;
+}
+
+/* 빈 프리뷰/큰 박스 때문에 아래로 밀리는 현상 제거 */
+.inventoryPageFixed .selectedPreview,
+.inventoryPageFixed .previewBox,
+.inventoryPageFixed .listBox,
+.inventoryPageFixed .resultBox,
+.inventoryPageFixed .recommendBox,
+.composePageFixed .selectedPreview,
+.composePageFixed .previewBox,
+.composePageFixed .listBox,
+.composePageFixed .resultBox,
+.composePageFixed .recommendBox {
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  margin: 4px 0 !important;
+}
+
+/* 체크된 상품 박스가 화면 맨 아래로 밀리지 않게 */
+.inventoryPageFixed .v54BulkEditPanel,
+.inventoryPageFixed .v57BulkEditPanel,
+.inventoryPageFixed .v59BulkEditPanel {
+  margin-top: 8px !important;
+  margin-bottom: 8px !important;
+}
+
+/* 혹시 부모 패널이 고정 높이를 가진 경우 강제 해제 */
+.panel.inventoryPageFixed,
+.panel.composePageFixed {
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+/* 모바일도 같은 기준 */
+@media (max-width: 900px) {
+  .inventoryResultArea .tableWrap,
+  .composeConditionResultArea .tableWrap,
+  .inventoryPageFixed .tableWrap,
+  .composePageFixed .tableWrap {
+    min-height: 160px !important;
+    max-height: 55vh !important;
+  }
+}

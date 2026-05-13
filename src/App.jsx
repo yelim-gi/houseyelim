@@ -2638,11 +2638,11 @@ export default function App() {
     const selectedManual = manualRecommendations[selectedManualIndex];
     return (
       <>
-        <section className="panel"><FilterBox /></section>
+        <section className="panel composePageFixed"><FilterBox /></section>
         <section className="splitLayout">
           <div className="panel">
             <h2>조건 상품 리스트</h2>
-            <ProductTable mode="compose" />
+            <div className="composeConditionResultArea"><ProductTable mode="compose" /></div>
           </div>
           <div className="panel">
             <h2>현재 조합 리스트</h2>
