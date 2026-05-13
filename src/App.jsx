@@ -2109,7 +2109,7 @@ export default function App() {
       <>
         <div className="filterRow">
           <label>상품명</label>
-          <input id="manual-product-search-input" name="manual-product-search" defaultValue={search} placeholder="상품명 검색" autoComplete="off" onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runManualProductSearch(); } }} />
+          <input id="manual-product-search-input" name="manual-product-search" defaultValue={search} placeholder="상품명 검색" autoComplete="off" onKeyDown={(e) => { if (!e.nativeEvent?.isComposing && e.key === "Enter") { e.preventDefault(); runManualProductSearch(); } }} />
         <button type="button" onClick={runManualProductSearch}>검색</button>
         <button type="button" onClick={clearManualProductSearch}>검색초기화</button>
           <MultiCheckFilter label="캐릭터1" options={char1Options} selected={char1Selected} setSelected={setChar1Selected} />
@@ -2441,7 +2441,7 @@ export default function App() {
 
 
   function runInventorySearchOnEnter(e) {
-    if (e.key === "Enter") {
+    if (!e.nativeEvent?.isComposing && e.key === "Enter") {
       e.preventDefault();
       getProducts();
     }
@@ -2921,7 +2921,7 @@ export default function App() {
         <h3>{title}</h3>
         <div className="tableWrap">
           <table><thead><tr><th>주문ID</th><th>주문일</th><th>주문자</th><th>재주문</th><th>상태</th><th>판매가</th><th>실수령액</th><th>순이익</th><th>취소사유</th></tr></thead><tbody>
-            {rows.map((o) => <tr key={o.id} onClick={() => setSelectedOrderId(o.id)} className={selectedOrderId === o.id ? "selectedRow" : ""}><td>{o.id}</td><td>{String(o.created_at || "").replace("T", " ").slice(0, 19)}</td><td>{o.customer}</td><td>{toInt(o.reorder) === 1 ? "Y" : ""}</td><td>{o.status}</td><td>{money(o.sale_price)}</td><td>{money(o.net_amount)}</td><td>{money(o.profit)}</td><td>{o.cancel_reason || ""}</td></tr>)}
+            {rows.map((o) => <tr key={o.id} onClick={(e) => { if (["INPUT","TEXTAREA","SELECT","BUTTON"].includes(e.target.tagName)) return; setSelectedOrderId(o.id); }} className={selectedOrderId === o.id ? "selectedRow" : ""}><td>{o.id}</td><td>{String(o.created_at || "").replace("T", " ").slice(0, 19)}</td><td>{o.customer}</td><td>{toInt(o.reorder) === 1 ? "Y" : ""}</td><td>{o.status}</td><td>{money(o.sale_price)}</td><td>{money(o.net_amount)}</td><td>{money(o.profit)}</td><td>{o.cancel_reason || ""}</td></tr>)}
             {rows.length === 0 && <tr><td colSpan="9" className="empty">표시할 주문이 없어요.</td></tr>}
           </tbody></table>
         </div>
