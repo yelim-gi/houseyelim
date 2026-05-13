@@ -2271,82 +2271,6 @@ export default function App() {
     if (linked.length > 0) {
       const ok = window.confirm(
         `이 상품이 기존 주문/출고 상품목록 ${linked.length}건에 포함되어 있어요.\n\n` +
-        "해당 주문/출고건의 상품명, 캐릭터1, 캐릭터2, 카테고리, 도매가, 소비자가에도 수정사항을 적용할까요?"
-      );
-
-      if (ok) {
-        const { error: itemError } = await supabase
-          .from("order_items")
-          .update({
-            name: payload.name,
-            product_name: payload.name,
-            char1: payload.char1,
-            char2: payload.char2,
-            category: payload.category,
-            wholesale: payload.wholesale,
-            retail: payload.retail,
-            wholesale_price: payload.wholesale,
-            retail_price: payload.retail,
-          })
-          .eq("product_id", editProductForm.id);
-        if (itemError) return alert("주문/출고 상품목록 반영 실패: " + itemError.message);
-      }
-    }
-
-    alert("상품 수정 완료!");
-    setEditProductForm(null);
-    getProducts();
-    getOrderItems();
-  }
-
-
-  function startEditProductById(productId) {
-    const p = products.find((x) => String(x.id) === String(productId));
-    if (!p) return alert("수정할 상품을 선택해줘.");
-    setSelectedProductId(p.id);
-    setEditProductForm({
-      id: p.id,
-      name: p.name || "",
-      char1: p.char1 || "",
-      char2: p.char2 || "",
-      category: p.category || "",
-      stock: String(toInt(p.stock)),
-      wholesale: String(toInt(p.wholesale)),
-      retail: String(toInt(p.retail)),
-      hidden: toInt(p.hidden) === 1,
-    });
-  }
-
-  function startEditSelectedProduct() {
-    if (!selectedProductId) return alert("수정할 상품을 선택해줘.");
-    startEditProductById(selectedProductId);
-  }
-
-  function cancelEditProduct() {
-    setEditProductForm(null);
-  }
-
-  async function saveEditedProduct() {
-    if (!editProductForm?.id) return alert("수정할 상품이 없어요.");
-
-    const payload = {
-      name: editProductForm.name || "",
-      char1: editProductForm.char1 || "",
-      char2: editProductForm.char2 || "",
-      category: editProductForm.category || "",
-      stock: toInt(editProductForm.stock),
-      wholesale: toInt(editProductForm.wholesale),
-      retail: toInt(editProductForm.retail),
-      hidden: editProductForm.hidden ? 1 : 0,
-    };
-
-    const { error } = await supabase.from("products").update(payload).eq("id", editProductForm.id);
-    if (error) return alert("재고 상품 수정 실패: " + error.message);
-
-    const linked = orderItems.filter((x) => String(x.product_id) === String(editProductForm.id));
-    if (linked.length > 0) {
-      const ok = window.confirm(
-        `이 상품이 기존 주문/출고 상품목록 ${linked.length}건에 포함되어 있어요.\n\n` +
         "해당 주문/출고건의 상품명, 캐릭터1, 캐릭터2, 카테고리, 도매가, 소비자가에도 수정사항을 적용할까요?\n\n" +
         "확인 = 기존 주문/출고건에도 반영\n취소 = 재고관리 상품만 수정"
       );
@@ -2364,12 +2288,26 @@ export default function App() {
             retail: payload.retail,
             wholesale_price: payload.wholesale,
             retail_price: payload.retail,
+            consumer_price: payload.retail,
           })
-          .eq
+          .eq("product_id", editProductForm.id);
+
+        if (itemError) return alert("주문/출고 상품목록 반영 실패: " + itemError.message);
+      }
+    }
+
+    alert("상품 수정 완료!");
+    setEditProductForm(null);
+    getProducts();
+    getOrderItems();
+  }
+
   function toggleBulkProduct(productId) {
     setBulkSelectedProductIds((prev) => {
       const id = String(productId);
-      return prev.map(String).includes(id) ? prev.filter((x) => String(x) !== id) : [...prev, productId];
+      return prev.map(String).includes(id)
+        ? prev.filter((x) => String(x) !== id)
+        : [...prev, productId];
     });
   }
 
@@ -2380,11 +2318,21 @@ export default function App() {
 
   function startBulkEditProducts() {
     if (bulkSelectedProductIds.length === 0) return alert("일괄 수정할 상품을 체크해줘.");
-    setBulkEditForm({ name: "", char1: "", char2: "", category: "", stock: "", wholesale: "", retail: "", hidden: "" });
+    setBulkEditForm({
+      name: "",
+      char1: "",
+      char2: "",
+      category: "",
+      stock: "",
+      wholesale: "",
+      retail: "",
+      hidden: "",
+    });
   }
 
   async function saveBulkEditedProducts() {
     if (!bulkEditForm || bulkSelectedProductIds.length === 0) return alert("일괄 수정할 상품이 없어요.");
+
     const payload = {};
     if (bulkEditForm.name.trim()) payload.name = bulkEditForm.name.trim();
     if (bulkEditForm.char1.trim()) payload.char1 = bulkEditForm.char1.trim();
@@ -2401,60 +2349,53 @@ export default function App() {
       payload.consumer_price = toInt(bulkEditForm.retail);
     }
     if (bulkEditForm.hidden !== "") payload.hidden = bulkEditForm.hidden === "1" ? 1 : 0;
+
     if (Object.keys(payload).length === 0) return alert("변경할 내용을 하나 이상 입력해줘.");
-    if (!window.confirm(`${bulkSelectedProductIds.length}개 상품을 일괄 수정할까요?\n빈칸은 수정하지 않습니다.`)) return;
+    if (!window.confirm(`${bulkSelectedProductIds.length}개 상품을 일괄 수정할까요?\n\n빈칸은 수정하지 않습니다.`)) return;
 
     const { error } = await supabase.from("products").update(payload).in("id", bulkSelectedProductIds);
     if (error) return alert("상품 일괄 수정 실패: " + error.message);
 
     const linked = orderItems.filter((x) => bulkSelectedProductIds.map(String).includes(String(x.product_id)));
-    if (linked.length > 0 && window.confirm(`선택한 상품이 기존 주문/출고 상품목록 ${linked.length}건에 포함되어 있어요.\n주문/출고건에도 이번 일괄 수정사항을 반영할까요?`)) {
-      for (const productId of bulkSelectedProductIds) {
-        const latest = { ...products.find((p) => String(p.id) === String(productId)), ...payload };
-        const itemPayload = {};
-        if (payload.name !== undefined) { itemPayload.name = latest.name; itemPayload.product_name = latest.name; }
-        if (payload.char1 !== undefined) itemPayload.char1 = latest.char1;
-        if (payload.char2 !== undefined) itemPayload.char2 = latest.char2;
-        if (payload.category !== undefined) itemPayload.category = latest.category;
-        if (payload.wholesale !== undefined || payload.wholesale_price !== undefined) {
-          itemPayload.wholesale = productWholesaleValue(latest);
-          itemPayload.wholesale_price = productWholesaleValue(latest);
-        }
-        if (payload.retail !== undefined || payload.retail_price !== undefined || payload.consumer_price !== undefined) {
-          itemPayload.retail = productRetailValue(latest);
-          itemPayload.retail_price = productRetailValue(latest);
-          itemPayload.consumer_price = productRetailValue(latest);
-        }
-        if (Object.keys(itemPayload).length > 0) {
-          const { error: itemError } = await supabase.from("order_items").update(itemPayload).eq("product_id", productId);
-          if (itemError) return alert("주문/출고 상품목록 일괄 반영 실패: " + itemError.message);
+    if (linked.length > 0) {
+      const apply = window.confirm(
+        `선택한 상품이 기존 주문/출고 상품목록 ${linked.length}건에 포함되어 있어요.\n\n` +
+        "주문/출고건에도 이번 일괄 수정사항을 반영할까요?"
+      );
+
+      if (apply) {
+        for (const productId of bulkSelectedProductIds) {
+          const latest = { ...products.find((p) => String(p.id) === String(productId)), ...payload };
+          const itemPayload = {};
+          if (payload.name !== undefined) {
+            itemPayload.name = latest.name;
+            itemPayload.product_name = latest.name;
+          }
+          if (payload.char1 !== undefined) itemPayload.char1 = latest.char1;
+          if (payload.char2 !== undefined) itemPayload.char2 = latest.char2;
+          if (payload.category !== undefined) itemPayload.category = latest.category;
+          if (payload.wholesale !== undefined || payload.wholesale_price !== undefined) {
+            itemPayload.wholesale = productWholesaleValue(latest);
+            itemPayload.wholesale_price = productWholesaleValue(latest);
+          }
+          if (payload.retail !== undefined || payload.retail_price !== undefined || payload.consumer_price !== undefined) {
+            itemPayload.retail = productRetailValue(latest);
+            itemPayload.retail_price = productRetailValue(latest);
+            itemPayload.consumer_price = productRetailValue(latest);
+          }
+
+          if (Object.keys(itemPayload).length > 0) {
+            const { error: itemError } = await supabase.from("order_items").update(itemPayload).eq("product_id", productId);
+            if (itemError) return alert("주문/출고 상품목록 일괄 반영 실패: " + itemError.message);
+          }
         }
       }
     }
+
     alert("상품 일괄 수정 완료!");
     clearBulkProducts();
     getProducts();
     getOrderItems();
-  }
-
-("product_id", editProductForm.id);
-
-        if (itemError) return alert("주문/출고 상품목록 반영 실패: " + itemError.message);
-      }
-    }
-
-    alert("상품 수정 완료!");
-    setEditProductForm(null);
-    getProducts();
-    getOrderItems();
-  }
-
-
-  function runInventorySearchOnEnter(e) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      getProducts();
-    }
   }
 
   function InventoryPage() {

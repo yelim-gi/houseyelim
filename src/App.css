@@ -1692,7 +1692,8 @@ button.savedGroupDeleteBtn {
 }
 
 
-/* v57: 재고관리 일괄수정 함수 누락 복구 */
+/* v58: 재고관리 일괄수정 스코프 오류 복구 */
+.v58BulkEditPanel,
 .v57BulkEditPanel,
 .v54BulkEditPanel {
   margin: 12px 0 !important;
@@ -1701,6 +1702,8 @@ button.savedGroupDeleteBtn {
   background: #fffdf2 !important;
 }
 
+.v58BulkEditPanel input,
+.v58BulkEditPanel select,
 .v57BulkEditPanel input,
 .v57BulkEditPanel select,
 .v54BulkEditPanel input,

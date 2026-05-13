@@ -137,7 +137,8 @@ v56 수정:
 - 관리자 비밀번호 분실 시 Supabase Authentication에서 재설정 안내 추가
 
 
-v57 수정:
-- 재고관리 빈 페이지 원인 수정: startBulkEditProducts 함수 누락 복구
-- 일괄수정 관련 함수 전체 보강
-- 재고관리 페이지 렌더링 오류 방지
+v58 수정:
+- 재고관리 빈 페이지 원인 재수정
+- saveEditedProduct 중간에 일괄수정 함수가 잘못 끼어들던 스코프 오류 해결
+- startBulkEditProducts / clearBulkProducts / saveBulkEditedProducts를 App 내부 정상 스코프에 배치
+- 재고관리 페이지에서 체크상품 일괄수정 렌더링 오류 방지
