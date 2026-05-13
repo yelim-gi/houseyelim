@@ -2219,7 +2219,7 @@ export default function App() {
             <button className="deleteBtn" onClick={deleteMaterial}>삭제</button>
           </div>
           <div className="tableWrap smallTable">
-            <table><thead><tr><th>ID</th><th>재료비명</th><th>금액</th></tr></thead><tbody>
+            <table><thead><tr><th>체크</th><th>ID</th><th>재료비명</th><th>금액</th></tr></thead><tbody>
               {materials.map((m) => <tr key={m.id} onClick={() => setSelectedMaterialId(m.id)} className={selectedMaterialId === m.id ? "selectedRow" : ""}><td>{m.id}</td><td>{m.name}</td><td>{money(m.amount)}</td></tr>)}
               {materials.length === 0 && <tr><td colSpan="3" className="empty">등록된 재료비가 없어요.</td></tr>}
             </tbody></table>

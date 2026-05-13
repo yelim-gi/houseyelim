@@ -1690,3 +1690,20 @@ button.savedGroupDeleteBtn {
   resize: vertical !important;
   white-space: pre-wrap !important;
 }
+
+
+/* v57: 재고관리 일괄수정 함수 누락 복구 */
+.v57BulkEditPanel,
+.v54BulkEditPanel {
+  margin: 12px 0 !important;
+  padding: 10px !important;
+  border: 2px solid #d6c15c !important;
+  background: #fffdf2 !important;
+}
+
+.v57BulkEditPanel input,
+.v57BulkEditPanel select,
+.v54BulkEditPanel input,
+.v54BulkEditPanel select {
+  min-width: 110px !important;
+}
