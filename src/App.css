@@ -1619,3 +1619,14 @@ button.savedGroupDeleteBtn {
 .v53EditProductPanel input {
   min-width: 120px !important;
 }
+
+.v54BulkEditPanel {
+  margin: 12px 0 !important;
+  padding: 10px !important;
+  border: 2px solid #d6c15c !important;
+  background: #fffdf2 !important;
+}
+.v54BulkEditPanel input,
+.v54BulkEditPanel select {
+  min-width: 110px !important;
+}

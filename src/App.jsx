@@ -204,6 +204,15 @@ function v48SelectedChars(a = [], b = []) {
   return Array.from(new Set([...(a || []), ...(b || [])])).filter(Boolean);
 }
 
+
+function productRetailValue(p) {
+  return toInt(p.retail || p.retail_price || p.consumer_price || p.price || p.sale_price || 0);
+}
+
+function productWholesaleValue(p) {
+  return toInt(p.wholesale || p.wholesale_price || p.cost || 0);
+}
+
 function compactText(v, max = 42) {
   const s = String(v || "");
   return s.length > max ? s.slice(0, max) + "…" : s;
@@ -293,6 +302,8 @@ export default function App() {
   const [materials, setMaterials] = useState([]);
 
   const [selectedProductId, setSelectedProductId] = useState(null);
+  const [bulkSelectedProductIds, setBulkSelectedProductIds] = useState([]);
+  const [bulkEditForm, setBulkEditForm] = useState(null);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [selectedOrderItemsOpen, setSelectedOrderItemsOpen] = useState(false);
   const [selectedMaterialId, setSelectedMaterialId] = useState(null);
@@ -2096,7 +2107,7 @@ export default function App() {
       <>
         <div className="filterRow">
           <label>상품명</label>
-          <input id="manual-product-search-input" name="manual-product-search" defaultValue={search} placeholder="상품명 검색" autoComplete="off" />
+          <input id="manual-product-search-input" name="manual-product-search" defaultValue={search} placeholder="상품명 검색" autoComplete="off" onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runManualProductSearch(); } }} />
         <button type="button" onClick={runManualProductSearch}>검색</button>
         <button type="button" onClick={clearManualProductSearch}>검색초기화</button>
           <MultiCheckFilter label="캐릭터1" options={char1Options} selected={char1Selected} setSelected={setChar1Selected} />
@@ -2129,7 +2140,7 @@ export default function App() {
     return (
       <div className="tableWrap">
         <table className="productTable">
-          <thead><tr><th>ID</th><th>상품명</th><th>캐릭터1</th><th>캐릭터2</th><th>카테고리</th><th>재고</th><th>도매가</th><th>소비자가</th><th>히든</th><th>{mode === "compose" ? "추가" : "삭제"}</th></tr></thead>
+          <thead><tr><th>체크</th><th>ID</th><th>상품명</th><th>캐릭터1</th><th>캐릭터2</th><th>카테고리</th><th>재고</th><th>도매가</th><th>소비자가</th><th>히든</th><th>{mode === "compose" ? "추가" : "삭제"}</th></tr></thead>
           <tbody>
             {filteredProducts.map((p) => (
               <tr key={p.id} onClick={() => setSelectedProductId(p.id)} className={selectedProductId === p.id ? "selectedRow" : ""} title={p.name}>
@@ -2146,11 +2157,11 @@ export default function App() {
 
 
   const v48CurrentInventoryCost = useMemo(() => {
-    return products.reduce((sum, p) => sum + toInt(p.wholesale) * toInt(p.stock), 0);
+    return products.reduce((sum, p) => sum + productWholesaleValue(p) * toInt(p.stock), 0);
   }, [products]);
 
   const v48CurrentInventoryRetail = useMemo(() => {
-    return products.reduce((sum, p) => sum + toInt(p.retail) * toInt(p.stock), 0);
+    return products.reduce((sum, p) => sum + productRetailValue(p) * toInt(p.stock), 0);
   }, [products]);
 
   const v48MaterialsTotal = useMemo(() => {
@@ -2352,7 +2363,79 @@ export default function App() {
             wholesale_price: payload.wholesale,
             retail_price: payload.retail,
           })
-          .eq("product_id", editProductForm.id);
+          .eq
+  function toggleBulkProduct(productId) {
+    setBulkSelectedProductIds((prev) => {
+      const id = String(productId);
+      return prev.map(String).includes(id) ? prev.filter((x) => String(x) !== id) : [...prev, productId];
+    });
+  }
+
+  function clearBulkProducts() {
+    setBulkSelectedProductIds([]);
+    setBulkEditForm(null);
+  }
+
+  function startBulkEditProducts() {
+    if (bulkSelectedProductIds.length === 0) return alert("일괄 수정할 상품을 체크해줘.");
+    setBulkEditForm({ name: "", char1: "", char2: "", category: "", stock: "", wholesale: "", retail: "", hidden: "" });
+  }
+
+  async function saveBulkEditedProducts() {
+    if (!bulkEditForm || bulkSelectedProductIds.length === 0) return alert("일괄 수정할 상품이 없어요.");
+    const payload = {};
+    if (bulkEditForm.name.trim()) payload.name = bulkEditForm.name.trim();
+    if (bulkEditForm.char1.trim()) payload.char1 = bulkEditForm.char1.trim();
+    if (bulkEditForm.char2.trim()) payload.char2 = bulkEditForm.char2.trim();
+    if (bulkEditForm.category.trim()) payload.category = bulkEditForm.category.trim();
+    if (bulkEditForm.stock !== "") payload.stock = toInt(bulkEditForm.stock);
+    if (bulkEditForm.wholesale !== "") {
+      payload.wholesale = toInt(bulkEditForm.wholesale);
+      payload.wholesale_price = toInt(bulkEditForm.wholesale);
+    }
+    if (bulkEditForm.retail !== "") {
+      payload.retail = toInt(bulkEditForm.retail);
+      payload.retail_price = toInt(bulkEditForm.retail);
+      payload.consumer_price = toInt(bulkEditForm.retail);
+    }
+    if (bulkEditForm.hidden !== "") payload.hidden = bulkEditForm.hidden === "1" ? 1 : 0;
+    if (Object.keys(payload).length === 0) return alert("변경할 내용을 하나 이상 입력해줘.");
+    if (!window.confirm(`${bulkSelectedProductIds.length}개 상품을 일괄 수정할까요?\n빈칸은 수정하지 않습니다.`)) return;
+
+    const { error } = await supabase.from("products").update(payload).in("id", bulkSelectedProductIds);
+    if (error) return alert("상품 일괄 수정 실패: " + error.message);
+
+    const linked = orderItems.filter((x) => bulkSelectedProductIds.map(String).includes(String(x.product_id)));
+    if (linked.length > 0 && window.confirm(`선택한 상품이 기존 주문/출고 상품목록 ${linked.length}건에 포함되어 있어요.\n주문/출고건에도 이번 일괄 수정사항을 반영할까요?`)) {
+      for (const productId of bulkSelectedProductIds) {
+        const latest = { ...products.find((p) => String(p.id) === String(productId)), ...payload };
+        const itemPayload = {};
+        if (payload.name !== undefined) { itemPayload.name = latest.name; itemPayload.product_name = latest.name; }
+        if (payload.char1 !== undefined) itemPayload.char1 = latest.char1;
+        if (payload.char2 !== undefined) itemPayload.char2 = latest.char2;
+        if (payload.category !== undefined) itemPayload.category = latest.category;
+        if (payload.wholesale !== undefined || payload.wholesale_price !== undefined) {
+          itemPayload.wholesale = productWholesaleValue(latest);
+          itemPayload.wholesale_price = productWholesaleValue(latest);
+        }
+        if (payload.retail !== undefined || payload.retail_price !== undefined || payload.consumer_price !== undefined) {
+          itemPayload.retail = productRetailValue(latest);
+          itemPayload.retail_price = productRetailValue(latest);
+          itemPayload.consumer_price = productRetailValue(latest);
+        }
+        if (Object.keys(itemPayload).length > 0) {
+          const { error: itemError } = await supabase.from("order_items").update(itemPayload).eq("product_id", productId);
+          if (itemError) return alert("주문/출고 상품목록 일괄 반영 실패: " + itemError.message);
+        }
+      }
+    }
+    alert("상품 일괄 수정 완료!");
+    clearBulkProducts();
+    getProducts();
+    getOrderItems();
+  }
+
+("product_id", editProductForm.id);
 
         if (itemError) return alert("주문/출고 상품목록 반영 실패: " + itemError.message);
       }
@@ -2362,6 +2445,14 @@ export default function App() {
     setEditProductForm(null);
     getProducts();
     getOrderItems();
+  }
+
+
+  function runInventorySearchOnEnter(e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      getProducts();
+    }
   }
 
   function InventoryPage() {
@@ -2418,6 +2509,38 @@ export default function App() {
             <p className="statusLine">수정완료 시 기존 주문/출고건에 포함된 상품이면 반영 여부를 물어봅니다.</p>
           </section>
         )}
+
+        
+        <section className="panel v54BulkEditPanel">
+          <div className="buttonRow">
+            <span className="statusLine">체크된 상품: {bulkSelectedProductIds.length}개</span>
+            <button type="button" onClick={startBulkEditProducts}>체크상품 일괄수정</button>
+            <button type="button" onClick={clearBulkProducts}>체크해제</button>
+          </div>
+          {bulkEditForm && (
+            <>
+              <div className="filterRow">
+                <label>상품명</label><input placeholder="빈칸=유지" value={bulkEditForm.name} onChange={(e) => setBulkEditForm({ ...bulkEditForm, name: e.target.value })} />
+                <label>캐릭터1</label><input placeholder="빈칸=유지" value={bulkEditForm.char1} onChange={(e) => setBulkEditForm({ ...bulkEditForm, char1: e.target.value })} />
+                <label>캐릭터2</label><input placeholder="빈칸=유지" value={bulkEditForm.char2} onChange={(e) => setBulkEditForm({ ...bulkEditForm, char2: e.target.value })} />
+                <label>카테고리</label><input placeholder="빈칸=유지" value={bulkEditForm.category} onChange={(e) => setBulkEditForm({ ...bulkEditForm, category: e.target.value })} />
+              </div>
+              <div className="filterRow">
+                <label>재고수량</label><input placeholder="빈칸=유지" value={bulkEditForm.stock} onChange={(e) => setBulkEditForm({ ...bulkEditForm, stock: e.target.value })} />
+                <label>도매가</label><input placeholder="빈칸=유지" value={bulkEditForm.wholesale} onChange={(e) => setBulkEditForm({ ...bulkEditForm, wholesale: e.target.value })} />
+                <label>소비자가</label><input placeholder="빈칸=유지" value={bulkEditForm.retail} onChange={(e) => setBulkEditForm({ ...bulkEditForm, retail: e.target.value })} />
+                <label>히든템</label>
+                <select value={bulkEditForm.hidden} onChange={(e) => setBulkEditForm({ ...bulkEditForm, hidden: e.target.value })}>
+                  <option value="">유지</option><option value="1">히든템</option><option value="0">일반</option>
+                </select>
+              </div>
+              <div className="buttonRow">
+                <button type="button" onClick={saveBulkEditedProducts}>일괄 수정완료</button>
+                <button type="button" onClick={() => setBulkEditForm(null)}>닫기</button>
+              </div>
+            </>
+          )}
+        </section>
 
         <ProductTable mode="inventory" />
         </section>
