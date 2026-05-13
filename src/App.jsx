@@ -2147,7 +2147,7 @@ export default function App() {
             {filteredProducts.map((p) => (
               <tr key={p.id} onClick={(e) => { if (["INPUT", "BUTTON", "SELECT", "TEXTAREA"].includes(e.target.tagName)) return; setSelectedProductId(p.id); }} className={selectedProductId === p.id ? "selectedRow" : ""} title={p.name}>
                 <td>{p.id}</td><td>{p.name}</td><td>{p.char1}</td><td>{p.char2}</td><td>{p.category}</td><td>{p.stock}</td><td>{money(p.wholesale)}</td><td>{money(p.retail)}</td>
-                <td>{mode === "compose" ? <button onClick={(e) => { e.stopPropagation(); addToCompose(p); }}>추가</button> : <div className="bulkActionCell"><input type="checkbox" checked={bulkSelectedProductIds.map(String).includes(String(p.id))} onClick={(e) => { e.stopPropagation(); toggleBulkProduct(p.id); }} onChange={() => {}} /><button onClick={(e) => { e.stopPropagation(); startEditProductById(p.id); }}>수정</button><button className="deleteBtn" onClick={(e) => { e.stopPropagation(); deleteProduct(p.id); }}>삭제</button></div>}</td>
+                <td>{mode === "compose" ? <button onClick={(e) => { e.stopPropagation(); addToCompose(p); }}>추가</button> : <div className="bulkActionCell"><input type="checkbox" checked={bulkSelectedProductIds.map(String).includes(String(p.id))} onClick={(e) => { e.stopPropagation(); v59ToggleBulkProduct(p.id); }} onChange={() => {}} /><button onClick={(e) => { e.stopPropagation(); startEditProductById(p.id); }}>수정</button><button className="deleteBtn" onClick={(e) => { e.stopPropagation(); deleteProduct(p.id); }}>삭제</button></div>}</td>
               </tr>
             ))}
             {filteredProducts.length === 0 && <tr><td colSpan="10" className="empty">등록된 상품이 없어요.</td></tr>}
@@ -2362,24 +2362,24 @@ export default function App() {
             retail_price: payload.retail,
           })
           .eq
-  function toggleBulkProduct(productId) {
+  function v59ToggleBulkProduct(productId) {
     setBulkSelectedProductIds((prev) => {
       const id = String(productId);
       return prev.map(String).includes(id) ? prev.filter((x) => String(x) !== id) : [...prev, productId];
     });
   }
 
-  function clearBulkProducts() {
+  function v59ClearBulkProducts() {
     setBulkSelectedProductIds([]);
     setBulkEditForm(null);
   }
 
-  function startBulkEditProducts() {
+  function v59StartBulkEditProducts() {
     if (bulkSelectedProductIds.length === 0) return alert("일괄 수정할 상품을 체크해줘.");
     setBulkEditForm({ name: "", char1: "", char2: "", category: "", stock: "", wholesale: "", retail: "", hidden: "" });
   }
 
-  async function saveBulkEditedProducts() {
+  async function v59SaveBulkEditedProducts() {
     if (!bulkEditForm || bulkSelectedProductIds.length === 0) return alert("일괄 수정할 상품이 없어요.");
     const payload = {};
     if (bulkEditForm.name.trim()) payload.name = bulkEditForm.name.trim();
@@ -2427,7 +2427,7 @@ export default function App() {
       }
     }
     alert("상품 일괄 수정 완료!");
-    clearBulkProducts();
+    v59ClearBulkProducts();
     getProducts();
     getOrderItems();
   }
@@ -2450,6 +2450,104 @@ export default function App() {
       e.preventDefault();
       getProducts();
     }
+  }
+
+
+  function v59ToggleBulkProduct(productId) {
+    setBulkSelectedProductIds((prev) => {
+      const id = String(productId);
+      return prev.map(String).includes(id)
+        ? prev.filter((x) => String(x) !== id)
+        : [...prev, productId];
+    });
+  }
+
+  function v59ClearBulkProducts() {
+    setBulkSelectedProductIds([]);
+    setBulkEditForm(null);
+  }
+
+  function v59StartBulkEditProducts() {
+    if (!bulkSelectedProductIds || bulkSelectedProductIds.length === 0) {
+      return alert("일괄 수정할 상품을 체크해줘.");
+    }
+    setBulkEditForm({
+      name: "",
+      char1: "",
+      char2: "",
+      category: "",
+      stock: "",
+      wholesale: "",
+      retail: "",
+    });
+  }
+
+  async function v59SaveBulkEditedProducts() {
+    if (!bulkEditForm || bulkSelectedProductIds.length === 0) {
+      return alert("일괄 수정할 상품이 없어요.");
+    }
+
+    const payload = {};
+    if (bulkEditForm.name.trim()) payload.name = bulkEditForm.name.trim();
+    if (bulkEditForm.char1.trim()) payload.char1 = bulkEditForm.char1.trim();
+    if (bulkEditForm.char2.trim()) payload.char2 = bulkEditForm.char2.trim();
+    if (bulkEditForm.category.trim()) payload.category = bulkEditForm.category.trim();
+    if (bulkEditForm.stock !== "") payload.stock = toInt(bulkEditForm.stock);
+    if (bulkEditForm.wholesale !== "") {
+      payload.wholesale = toInt(bulkEditForm.wholesale);
+      payload.wholesale_price = toInt(bulkEditForm.wholesale);
+    }
+    if (bulkEditForm.retail !== "") {
+      payload.retail = toInt(bulkEditForm.retail);
+      payload.retail_price = toInt(bulkEditForm.retail);
+      payload.consumer_price = toInt(bulkEditForm.retail);
+    }
+
+    if (Object.keys(payload).length === 0) return alert("변경할 내용을 하나 이상 입력해줘.");
+    if (!window.confirm(`${bulkSelectedProductIds.length}개 상품을 일괄 수정할까요?\n\n빈칸은 수정하지 않습니다.`)) return;
+
+    const { error } = await supabase.from("products").update(payload).in("id", bulkSelectedProductIds);
+    if (error) return alert("상품 일괄 수정 실패: " + error.message);
+
+    const linked = orderItems.filter((x) => bulkSelectedProductIds.map(String).includes(String(x.product_id)));
+    if (linked.length > 0) {
+      const apply = window.confirm(
+        `선택한 상품이 기존 주문/출고 상품목록 ${linked.length}건에 포함되어 있어요.\n\n` +
+        "주문/출고건에도 이번 일괄 수정사항을 반영할까요?"
+      );
+
+      if (apply) {
+        for (const productId of bulkSelectedProductIds) {
+          const latest = { ...products.find((p) => String(p.id) === String(productId)), ...payload };
+          const itemPayload = {};
+          if (payload.name !== undefined) {
+            itemPayload.name = latest.name;
+            itemPayload.product_name = latest.name;
+          }
+          if (payload.char1 !== undefined) itemPayload.char1 = latest.char1;
+          if (payload.char2 !== undefined) itemPayload.char2 = latest.char2;
+          if (payload.category !== undefined) itemPayload.category = latest.category;
+          if (payload.wholesale !== undefined || payload.wholesale_price !== undefined) {
+            itemPayload.wholesale = productWholesaleValue(latest);
+            itemPayload.wholesale_price = productWholesaleValue(latest);
+          }
+          if (payload.retail !== undefined || payload.retail_price !== undefined || payload.consumer_price !== undefined) {
+            itemPayload.retail = productRetailValue(latest);
+            itemPayload.retail_price = productRetailValue(latest);
+            itemPayload.consumer_price = productRetailValue(latest);
+          }
+          if (Object.keys(itemPayload).length > 0) {
+            const { error: itemError } = await supabase.from("order_items").update(itemPayload).eq("product_id", productId);
+            if (itemError) return alert("주문/출고 상품목록 일괄 반영 실패: " + itemError.message);
+          }
+        }
+      }
+    }
+
+    alert("상품 일괄 수정 완료!");
+    v59ClearBulkProducts();
+    getProducts();
+    getOrderItems();
   }
 
   function InventoryPage() {
@@ -2510,8 +2608,8 @@ export default function App() {
         <section className="panel v54BulkEditPanel">
           <div className="buttonRow">
             <span className="statusLine">체크된 상품: {bulkSelectedProductIds.length}개</span>
-            <button type="button" onClick={startBulkEditProducts}>체크상품 일괄수정</button>
-            <button type="button" onClick={clearBulkProducts}>체크해제</button>
+            <button type="button" onClick={v59StartBulkEditProducts}>체크상품 일괄수정</button>
+            <button type="button" onClick={v59ClearBulkProducts}>체크해제</button>
           </div>
           {bulkEditForm && (
             <>
@@ -2527,7 +2625,7 @@ export default function App() {
                 <label>소비자가</label><input placeholder="빈칸=유지" value={bulkEditForm.retail} onChange={(e) => setBulkEditForm({ ...bulkEditForm, retail: e.target.value })} />
               </div>
               <div className="buttonRow">
-                <button type="button" onClick={saveBulkEditedProducts}>일괄 수정완료</button>
+                <button type="button" onClick={v59SaveBulkEditedProducts}>일괄 수정완료</button>
                 <button type="button" onClick={() => setBulkEditForm(null)}>닫기</button>
               </div>
             </>

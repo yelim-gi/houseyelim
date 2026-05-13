@@ -1725,3 +1725,14 @@ button.savedGroupDeleteBtn {
 .bulkActionCell button {
   padding: 2px 6px !important;
 }
+
+
+/* v59: 일괄수정 함수 스코프 고정 */
+.v59BulkEditPanel,
+.v57BulkEditPanel,
+.v54BulkEditPanel {
+  margin: 12px 0 !important;
+  padding: 10px !important;
+  border: 2px solid #d6c15c !important;
+  background: #fffdf2 !important;
+}
