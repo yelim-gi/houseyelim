@@ -3408,15 +3408,26 @@ export default function App() {
   }
 
   function renderPage() {
-    if (activeTab === "대시보드") return DashboardPage();
-    if (activeTab === "재고관리") return InventoryPage();
-    if (activeTab === "수동박스") return ComposePage();
-    if (activeTab === "랜덤스쿱") return ScoopPage();
-    if (activeTab === "주문관리") return OrdersPage();
-    if (activeTab === "택배접수") return ShippingRegisterPage();
-    if (activeTab === "취소보관함") return TrashPage();
-    if (activeTab === "설정") return SettingsPage();
-    return DashboardPage();
+    try {
+      if (activeTab === "대시보드") return <DashboardPage />;
+      if (activeTab === "재고관리") return <InventoryPage />;
+      if (activeTab === "수동박스") return <ComposePage />;
+      if (activeTab === "랜덤스쿱") return <ScoopPage />;
+      if (activeTab === "주문관리") return <OrdersPage />;
+      if (activeTab === "택배접수") return <ShippingRegisterPage />;
+      if (activeTab === "취소보관함") return <TrashPage />;
+      if (activeTab === "설정") return <SettingsPage />;
+      return <DashboardPage />;
+    } catch (err) {
+      console.error(err);
+      return (
+        <section className="panel">
+          <h2>페이지 표시 오류</h2>
+          <p className="statusLine">페이지를 표시하는 중 오류가 발생했어요. 새로고침 후 다시 시도해줘.</p>
+          <pre className="errorBox">{String(err?.message || err)}</pre>
+        </section>
+      );
+    }
   }
 
   if (authLoading) {
