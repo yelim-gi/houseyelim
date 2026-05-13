@@ -2007,3 +2007,142 @@ button.savedGroupDeleteBtn {
     max-height: 55vh !important;
   }
 }
+
+
+/* v68: 재고관리/수동박스 상품목록 박스 위로 올리고 크게 표시 */
+.inventoryPageFixed,
+.composePageFixed {
+  display: flex !important;
+  flex-direction: column !important;
+  height: calc(100vh - 95px) !important;
+  min-height: calc(100vh - 95px) !important;
+  max-height: calc(100vh - 95px) !important;
+  overflow: hidden !important;
+  padding: 6px !important;
+  box-sizing: border-box !important;
+}
+
+/* 검색/필터 위쪽 영역은 내용만큼만 */
+.inventoryPageFixed > *,
+.composePageFixed > * {
+  flex: 0 0 auto !important;
+}
+
+/* 결과표 영역은 남은 화면을 전부 차지 */
+.inventoryResultArea,
+.composeConditionResultArea {
+  flex: 1 1 auto !important;
+  height: auto !important;
+  min-height: 360px !important;
+  max-height: none !important;
+  margin: 6px 0 8px 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  order: 2 !important;
+}
+
+/* 상품 목록 표 스크롤 박스 크게 */
+.inventoryResultArea .tableWrap,
+.composeConditionResultArea .tableWrap {
+  height: 100% !important;
+  min-height: 360px !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  background: #fff !important;
+  border: 1px solid #c9b65d !important;
+}
+
+/* 기존 tableWrap이 직접 있을 때도 크게 */
+.inventoryPageFixed > .tableWrap,
+.composePageFixed > .tableWrap {
+  flex: 1 1 auto !important;
+  height: auto !important;
+  min-height: 360px !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  background: #fff !important;
+}
+
+/* 기존에 큰 빈 공간을 만드는 요소들 제거 */
+.inventoryPageFixed .selectedPreview,
+.inventoryPageFixed .previewBox,
+.inventoryPageFixed .listBox,
+.inventoryPageFixed .resultBox,
+.inventoryPageFixed .recommendBox,
+.composePageFixed .selectedPreview,
+.composePageFixed .previewBox,
+.composePageFixed .listBox,
+.composePageFixed .resultBox,
+.composePageFixed .recommendBox {
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 체크상품/백업 버튼은 결과표 위쪽에 붙이고 작게 */
+.inventoryPageFixed .v54BulkEditPanel,
+.inventoryPageFixed .v57BulkEditPanel,
+.inventoryPageFixed .v59BulkEditPanel,
+.inventoryPageFixed .buttonRow {
+  flex: 0 0 auto !important;
+  margin: 4px 0 !important;
+  padding: 4px !important;
+  order: 1 !important;
+}
+
+/* 결과표가 버튼 아래 바로 오게 */
+.inventoryPageFixed .statusLine,
+.composePageFixed .statusLine {
+  margin: 3px 0 !important;
+  padding: 0 !important;
+}
+
+/* 표 행은 보기 좋게 */
+.inventoryResultArea table,
+.composeConditionResultArea table,
+.inventoryPageFixed table,
+.composePageFixed table {
+  width: 100% !important;
+  table-layout: auto !important;
+}
+
+.inventoryResultArea th,
+.inventoryResultArea td,
+.composeConditionResultArea th,
+.composeConditionResultArea td,
+.inventoryPageFixed th,
+.inventoryPageFixed td,
+.composePageFixed th,
+.composePageFixed td {
+  padding: 5px 6px !important;
+  line-height: 1.25 !important;
+  vertical-align: middle !important;
+}
+
+.inventoryResultArea tr,
+.composeConditionResultArea tr,
+.inventoryPageFixed tr,
+.composePageFixed tr {
+  height: 30px !important;
+}
+
+/* 모바일에서도 전체 페이지보다 박스 안 스크롤 */
+@media (max-width: 900px) {
+  .inventoryPageFixed,
+  .composePageFixed {
+    height: calc(100vh - 88px) !important;
+    min-height: calc(100vh - 88px) !important;
+    max-height: calc(100vh - 88px) !important;
+  }
+
+  .inventoryResultArea,
+  .composeConditionResultArea,
+  .inventoryResultArea .tableWrap,
+  .composeConditionResultArea .tableWrap {
+    min-height: 300px !important;
+  }
+}
