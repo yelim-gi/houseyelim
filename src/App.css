@@ -1630,3 +1630,63 @@ button.savedGroupDeleteBtn {
 .v54BulkEditPanel select {
   min-width: 110px !important;
 }
+
+
+/* v55: 택배접수 페이지 */
+.shippingRegisterPage {
+  margin-bottom: 12px !important;
+}
+
+.shippingPasteBox {
+  width: 100% !important;
+  min-height: 150px !important;
+  resize: vertical !important;
+  box-sizing: border-box !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  padding: 8px !important;
+  background: #fff !important;
+  border: 1px solid #b7a23a !important;
+}
+
+.shippingTablePanel {
+  margin-top: 12px !important;
+}
+
+.shippingTableWrap {
+  max-height: 520px !important;
+  overflow: auto !important;
+  background: #fff !important;
+}
+
+.shippingTableWrap input,
+.shippingTableWrap select,
+.shippingTableWrap textarea {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  font-size: 12px !important;
+}
+
+.shippingTableWrap td {
+  vertical-align: top !important;
+}
+
+.shippingAddressInput {
+  min-width: 300px !important;
+}
+
+.shippingDetailInput {
+  min-width: 180px !important;
+}
+
+.boxCountInput {
+  min-width: 55px !important;
+  text-align: center !important;
+}
+
+.shippingMessageInput {
+  min-width: 320px !important;
+  min-height: 58px !important;
+  resize: vertical !important;
+  white-space: pre-wrap !important;
+}

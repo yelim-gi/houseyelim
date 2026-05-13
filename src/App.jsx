@@ -11,7 +11,7 @@ const PRICE_RANGES = [
   "20000~25000", "25000~30000", "30000~35000", "35000+",
 ];
 
-const TABS = ["대시보드", "재고관리", "수동박스", "랜덤스쿱", "주문관리", "취소보관함", "설정"];
+const TABS = ["대시보드", "재고관리", "수동박스", "랜덤스쿱", "주문관리", "택배접수", "취소보관함", "설정"];
 
 function nowString() {
   const d = new Date();
@@ -288,6 +288,8 @@ function MultiCheckFilter({ label, options, selected, setSelected }) {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("대시보드");
+  const [shippingPasteText, setShippingPasteText] = useState("");
+  const [shippingRows, setShippingRows] = useState([]);
   const [v48ManualStrictCharsOnly, setV48ManualStrictCharsOnly] = useState(false);
   const [v48ScoopStrictCharsOnly, setV48ScoopStrictCharsOnly] = useState(false);
 
@@ -3011,6 +3013,221 @@ export default function App() {
     alert("구성 복사 완료!\n수동박스의 현재 조합 리스트에서 확인한 뒤 박스출고를 눌러주세요.");
   }
 
+
+  function parsePastedTsv(text) {
+    const rows = [];
+    let row = [];
+    let cell = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      const next = text[i + 1];
+
+      if (ch === '"') {
+        if (inQuotes && next === '"') {
+          cell += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (ch === "\t" && !inQuotes) {
+        row.push(cell);
+        cell = "";
+      } else if ((ch === "\n" || ch === "\r") && !inQuotes) {
+        if (ch === "\r" && next === "\n") i++;
+        row.push(cell);
+        if (row.some((x) => String(x).trim() !== "")) rows.push(row);
+        row = [];
+        cell = "";
+      } else {
+        cell += ch;
+      }
+    }
+
+    row.push(cell);
+    if (row.some((x) => String(x).trim() !== "")) rows.push(row);
+    return rows;
+  }
+
+  function normalizePhone(v) {
+    return String(v || "").trim();
+  }
+
+  function normalizeZip(v) {
+    return String(v || "").replace(/[^0-9]/g, "").trim();
+  }
+
+  function convertShippingPaste() {
+    const parsed = parsePastedTsv(shippingPasteText);
+    if (parsed.length === 0) return alert("붙여넣은 주문 데이터가 없어요.");
+
+    const converted = parsed.map((cols, index) => {
+      const clean = cols.map((x) => String(x ?? "").trim());
+      return {
+        id: Date.now() + index,
+        selected: false,
+        receiverName: clean[0] || "",
+        zipcode: normalizeZip(clean[9] || ""),
+        baseAddress: clean[6] || "",
+        detailAddress: clean[7] || "",
+        receiverPhone: normalizePhone(clean[5] || clean[8] || ""),
+        boxWeight: "2",
+        boxVolume: "60",
+        boxCount: "1",
+        content: "생활용품",
+        deliveryMessage: clean.slice(10).join("\n").trim(),
+      };
+    }).filter((x) => x.receiverName || x.zipcode || x.baseAddress || x.receiverPhone);
+
+    if (converted.length === 0) return alert("변환할 수 있는 주문 데이터가 없어요. 복사한 데이터 순서를 확인해줘.");
+
+    setShippingRows(converted);
+    alert(`${converted.length}건을 택배접수 양식으로 변환했어요.`);
+  }
+
+  function updateShippingRow(id, key, value) {
+    setShippingRows((prev) => prev.map((row) => row.id === id ? { ...row, [key]: value } : row));
+  }
+
+  function toggleShippingRow(id) {
+    setShippingRows((prev) => prev.map((row) => row.id === id ? { ...row, selected: !row.selected } : row));
+  }
+
+  function deleteSelectedShippingRows() {
+    const count = shippingRows.filter((x) => x.selected).length;
+    if (count === 0) return alert("삭제할 행을 체크해줘.");
+    if (!window.confirm(`${count}건을 삭제할까요?`)) return;
+    setShippingRows((prev) => prev.filter((x) => !x.selected));
+  }
+
+  function clearShippingRows() {
+    if (shippingRows.length === 0) return;
+    if (!window.confirm("택배접수 목록을 모두 비울까요?")) return;
+    setShippingRows([]);
+  }
+
+  function downloadShippingExcel() {
+    if (shippingRows.length === 0) return alert("다운로드할 택배접수 목록이 없어요.");
+
+    const data = shippingRows.map((row) => ({
+      수취인명: row.receiverName,
+      우편번호: row.zipcode,
+      기본주소: row.baseAddress,
+      상세주소: row.detailAddress,
+      수취인연락처: row.receiverPhone,
+      박스무게: row.boxWeight,
+      박스부피: row.boxVolume,
+      박스수량: row.boxCount,
+      내용품: "생활용품",
+      배송메시지: row.deliveryMessage,
+    }));
+
+    const headers = ["수취인명", "우편번호", "기본주소", "상세주소", "수취인연락처", "박스무게", "박스부피", "박스수량", "내용품", "배송메시지"];
+    const ws = XLSX.utils.json_to_sheet(data, { header: headers });
+    XLSX.utils.sheet_add_aoa(ws, [headers], { origin: "A1" });
+
+    ws["!cols"] = [
+      { wch: 12 }, { wch: 10 }, { wch: 42 }, { wch: 24 }, { wch: 16 },
+      { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 45 },
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "택배접수");
+    XLSX.writeFile(wb, `택배접수_${nowString().slice(0, 10).replaceAll("-", "")}.xlsx`);
+  }
+
+  function ShippingRegisterPage() {
+    return (
+      <>
+        <section className="panel shippingRegisterPage">
+          <h2>택배접수</h2>
+          <p className="statusLine">
+            네이버 주문 데이터를 그대로 복사해서 붙여넣으면 우체국 접수 양식으로 자동 정리됩니다.
+            내용품은 항상 생활용품으로 들어가고, 배송메시지는 아래 표에서 직접 수정할 수 있어요.
+          </p>
+
+          <textarea
+            className="shippingPasteBox"
+            value={shippingPasteText}
+            onChange={(e) => setShippingPasteText(e.target.value)}
+            placeholder={"수취인명\\t상품명\\t옵션상품\\t좋아하는캐릭터/영상촬영\\t수량\\t수취인연락처\\t기본주소\\t상세주소\\t구매자연락처\\t우편번호\\t배송메시지\\n여기에 주문 데이터를 그대로 붙여넣어줘."}
+          />
+
+          <div className="buttonRow">
+            <button type="button" onClick={convertShippingPaste}>자동 변환</button>
+            <button type="button" onClick={downloadShippingExcel}>엑셀 다운로드</button>
+            <button type="button" onClick={deleteSelectedShippingRows}>선택 삭제</button>
+            <button type="button" className="deleteBtn" onClick={clearShippingRows}>전체 삭제</button>
+          </div>
+
+          <p className="statusLine">변환된 택배접수 건수: {shippingRows.length.toLocaleString()}건</p>
+        </section>
+
+        <section className="panel shippingTablePanel">
+          <h3>택배접수 목록</h3>
+          <div className="tableWrap shippingTableWrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>선택</th>
+                  <th>수취인명</th>
+                  <th>우편번호</th>
+                  <th>기본주소</th>
+                  <th>상세주소</th>
+                  <th>수취인연락처</th>
+                  <th>박스무게</th>
+                  <th>박스부피</th>
+                  <th>박스수량</th>
+                  <th>내용품</th>
+                  <th>배송메시지</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shippingRows.map((row) => (
+                  <tr key={row.id}>
+                    <td><input type="checkbox" checked={row.selected} onChange={() => toggleShippingRow(row.id)} /></td>
+                    <td><input value={row.receiverName} onChange={(e) => updateShippingRow(row.id, "receiverName", e.target.value)} /></td>
+                    <td><input value={row.zipcode} onChange={(e) => updateShippingRow(row.id, "zipcode", e.target.value)} /></td>
+                    <td><input className="shippingAddressInput" value={row.baseAddress} onChange={(e) => updateShippingRow(row.id, "baseAddress", e.target.value)} /></td>
+                    <td><input className="shippingDetailInput" value={row.detailAddress} onChange={(e) => updateShippingRow(row.id, "detailAddress", e.target.value)} /></td>
+                    <td><input value={row.receiverPhone} onChange={(e) => updateShippingRow(row.id, "receiverPhone", e.target.value)} /></td>
+                    <td>
+                      <select value={row.boxWeight} onChange={(e) => updateShippingRow(row.id, "boxWeight", e.target.value)}>
+                        <option value="2">2</option>
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                      </select>
+                    </td>
+                    <td>
+                      <select value={row.boxVolume} onChange={(e) => updateShippingRow(row.id, "boxVolume", e.target.value)}>
+                        <option value="60">60</option>
+                        <option value="80">80</option>
+                        <option value="100">100</option>
+                      </select>
+                    </td>
+                    <td><input className="boxCountInput" value={row.boxCount} onChange={(e) => updateShippingRow(row.id, "boxCount", e.target.value)} /></td>
+                    <td>생활용품</td>
+                    <td>
+                      <textarea
+                        className="shippingMessageInput"
+                        value={row.deliveryMessage}
+                        onChange={(e) => updateShippingRow(row.id, "deliveryMessage", e.target.value)}
+                      />
+                    </td>
+                  </tr>
+                ))}
+                {shippingRows.length === 0 && (
+                  <tr><td colSpan="11" className="empty">붙여넣기 후 자동 변환을 누르면 목록이 표시됩니다.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </>
+    );
+  }
+
   function TrashPage() {
     return (
       <section className="panel trashPage">
@@ -3196,6 +3413,7 @@ export default function App() {
     if (activeTab === "수동박스") return ComposePage();
     if (activeTab === "랜덤스쿱") return ScoopPage();
     if (activeTab === "주문관리") return OrdersPage();
+    if (activeTab === "택배접수") return ShippingRegisterPage();
     if (activeTab === "취소보관함") return TrashPage();
     if (activeTab === "설정") return SettingsPage();
     return DashboardPage();
