@@ -2278,6 +2278,9 @@ export default function App() {
       if (financeMonth !== "전체" && month !== financeMonth) return;
       const key = `${year}-${month}`;
       if (!monthly[key]) monthly[key] = { period: key, orderCount: 0, sales: 0, netSales: 0, productCost: 0, materialCost: 0, realProfit: 0 };
+      const statusText = String(o.status || "");
+      if (!statusText.includes("출고")) return;
+
       monthly[key].orderCount += 1;
       monthly[key].sales += toInt(o.sale_price || o.price || o.total_price || o.sales || 0);
       monthly[key].netSales += toInt(o.net_amount || o.netAmount || o.received || o.real_amount || o.sale_price || o.price || 0);
@@ -2332,7 +2335,7 @@ export default function App() {
           <div className="card"><span>상품종류</span><strong>{products.length.toLocaleString()}</strong></div>
           <div className="card"><span>재고수량</span><strong>{totalStock.toLocaleString()}</strong></div>
           <div className="card"><span>총매입가격</span><strong>{money(totalWholesale)}</strong></div>
-          <div className="card"><span>총주문수</span><strong>{orders.filter((o) => o.status !== "취소").length.toLocaleString()}</strong></div>
+          <div className="card"><span>출고완료 주문수</span><strong>{orders.filter((o) => o.status !== "취소").length.toLocaleString()}</strong></div>
           <div className="card"><span>총매출</span><strong>{money(totalSales)}</strong></div>
           <div className="card"><span>실수령액</span><strong>{money(totalNet)}</strong></div>
           <div className="card"><span>순이익</span><strong>{money(totalProfit)}</strong></div>
