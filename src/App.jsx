@@ -3445,7 +3445,7 @@ export default function App() {
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "택배접수");
-    XLSX.writeFile(wb, `택배접수_${nowString().slice(0, 10).replaceAll("-", "")}.xlsx`);
+    XLSX.writeFile(wb, "택배접수.xlsx");
 
     const clearOk = window.confirm("엑셀 다운로드가 완료됐어요.\n\n택배접수 목록도 삭제할까요?");
     if (clearOk) {
