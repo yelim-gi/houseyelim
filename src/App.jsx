@@ -11,7 +11,7 @@ const PRICE_RANGES = [
   "20000~25000", "25000~30000", "30000~35000", "35000+",
 ];
 
-const TABS = ["대시보드", "재고관리", "수동박스", "랜덤스쿱", "주문관리", "택배접수", "취소보관함", "설정"];
+const TABS = ["대시보드", "매입매출현황", "재고관리", "수동박스", "주문관리", "택배접수", "취소보관함", "설정"];
 
 function nowString() {
   const d = new Date();
@@ -288,6 +288,11 @@ function MultiCheckFilter({ label, options, selected, setSelected }) {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("대시보드");
+  const [todoItems, setTodoItems] = useState([]);
+  const [newTodoText, setNewTodoText] = useState("");
+  const [quickTodo, setQuickTodo] = useState("");
+  const [financeYear, setFinanceYear] = useState(String(new Date().getFullYear()));
+  const [financeMonth, setFinanceMonth] = useState("전체");
   const [shippingPasteText, setShippingPasteText] = useState("");
   const [shippingRows, setShippingRows] = useState([]);
   const [v48ManualStrictCharsOnly, setV48ManualStrictCharsOnly] = useState(false);
@@ -1161,7 +1166,7 @@ export default function App() {
       `소비자가합: ${money(fin.retailSum)}`,
       `수수료: ${money(fin.feeAmount)}`,
       `실수령액: ${money(fin.netAmount)}`,
-      `순이익: ${money(fin.profit)}`,
+      `순이익: ${money(realNetProfit)}`,
       `마진율: ${fin.margin.toFixed(1)}%`,
       "",
       zeroWarnings.length ? "[출고 후 재고 0개 상품]\n" + zeroWarnings.join("\n") : "출고 후 재고 0개 상품 없음",
@@ -2131,7 +2136,7 @@ export default function App() {
           </select>
           <button onClick={resetFilters}>초기화</button>
         </div>
-        <label className="checkLine"><input checked={hiddenOnly} onChange={(e) => setHiddenOnly(e.target.checked)} type="checkbox" /> 히든템만 보기</label>
+        <label className="checkLine"><input checked={hiddenOnly} onChange={(e) => setHiddenOnly(e.target.checked)} type="checkbox" /> </label>
         <label className="checkLine"><input checked={excludeLowStock} onChange={(e) => setExcludeLowStock(e.target.checked)} type="checkbox" /> 재고 1개 제외</label>
         <p className="statusLine">조회 결과: {filteredProducts.length.toLocaleString()}종 / 재고 {filteredProducts.reduce((s, p) => s + toInt(p.stock), 0).toLocaleString()}개</p>
       </>
@@ -2187,6 +2192,134 @@ export default function App() {
 
   const v50TotalInvestment = v48CurrentInventoryCost + v50SoldItemsWholesaleTotal + v48MaterialsTotal;
 
+
+  const materialTotalForProfit = useMemo(() => {
+    return materials.reduce((sum, m) => sum + toInt(m.amount || m.price || m.cost || 0), 0);
+  }, [materials]);
+
+  const shippedOrdersForProfit = useMemo(() => {
+    return orders.filter((o) => String(o.status || "").includes("출고"));
+  }, [orders]);
+
+  const shippedWholesaleTotal = useMemo(() => {
+    const shippedIds = new Set(shippedOrdersForProfit.map((o) => String(o.id)));
+    return orderItems
+      .filter((x) => shippedIds.has(String(x.order_id)))
+      .reduce((sum, x) => sum + toInt(x.wholesale || x.wholesale_price || x.cost || 0) * toInt(x.qty || 1), 0);
+  }, [orderItems, shippedOrdersForProfit]);
+
+  const realNetProfit = useMemo(() => {
+    const received = shippedOrdersForProfit.reduce((sum, o) => sum + toInt(o.net_amount || o.netAmount || o.received || o.real_amount || o.sale_price || o.price || 0), 0);
+    return received - shippedWholesaleTotal - materialTotalForProfit;
+  }, [shippedOrdersForProfit, shippedWholesaleTotal, materialTotalForProfit]);
+
+  const pendingShippingCount = useMemo(() => {
+    return orders.filter((o) => {
+      const s = String(o.status || "");
+      return s.includes("주문접수") || s.includes("재고임시차감");
+    }).length;
+  }, [orders]);
+
+  useEffect(() => {
+    setTodoItems((prev) => prev.filter((t) => !(t.done && t.doneAt && Date.now() - t.doneAt > 12 * 60 * 60 * 1000)));
+  }, [orders.length, activeTab]);
+
+  useEffect(() => {
+    setTodoItems((prev) => {
+      const autoId = "auto-pending-shipping";
+      const text = `주문건 ${pendingShippingCount}개 우체국 출고하기`;
+      const exists = prev.find((t) => t.id === autoId);
+      if (pendingShippingCount > 0) {
+        if (exists) return prev.map((t) => t.id === autoId ? { ...t, text, done: false, doneAt: null, auto: true } : t);
+        return [{ id: autoId, text, done: false, doneAt: null, auto: true }, ...prev];
+      }
+      if (exists && !exists.done) return prev.map((t) => t.id === autoId ? { ...t, done: true, doneAt: Date.now() } : t);
+      return prev;
+    });
+  }, [pendingShippingCount]);
+
+  function addTodoItem(text) {
+    const clean = String(text || "").trim();
+    if (!clean) return;
+    setTodoItems((prev) => [{ id: `todo-${Date.now()}`, text: clean, done: false, doneAt: null, auto: false }, ...prev]);
+    setNewTodoText("");
+    setQuickTodo("");
+  }
+
+  function toggleTodoItem(id) {
+    setTodoItems((prev) => prev.map((t) => t.id === id ? { ...t, done: !t.done, doneAt: !t.done ? Date.now() : null } : t));
+  }
+
+  function deleteTodoItem(id) {
+    setTodoItems((prev) => prev.filter((t) => t.id !== id));
+  }
+
+  function orderDateString(o) {
+    return String(o.created_at || o.order_date || o.date || "").slice(0, 10);
+  }
+
+  const financeYears = useMemo(() => {
+    const years = new Set();
+    orders.forEach((o) => {
+      const y = orderDateString(o).slice(0, 4);
+      if (y) years.add(y);
+    });
+    years.add(String(new Date().getFullYear()));
+    return Array.from(years).sort().reverse();
+  }, [orders]);
+
+  function financeRows() {
+    const monthly = {};
+    orders.forEach((o) => {
+      const date = orderDateString(o);
+      const year = date.slice(0, 4) || financeYear;
+      const month = date.slice(5, 7) || "01";
+      if (String(year) !== String(financeYear)) return;
+      if (financeMonth !== "전체" && month !== financeMonth) return;
+      const key = `${year}-${month}`;
+      if (!monthly[key]) monthly[key] = { period: key, orderCount: 0, sales: 0, netSales: 0, productCost: 0, materialCost: 0, realProfit: 0 };
+      monthly[key].orderCount += 1;
+      monthly[key].sales += toInt(o.sale_price || o.price || o.total_price || o.sales || 0);
+      monthly[key].netSales += toInt(o.net_amount || o.netAmount || o.received || o.real_amount || o.sale_price || o.price || 0);
+      const items = orderItems.filter((x) => String(x.order_id) === String(o.id));
+      monthly[key].productCost += items.reduce((sum, x) => sum + toInt(x.wholesale || x.wholesale_price || x.cost || 0) * toInt(x.qty || 1), 0);
+    });
+
+    materials.forEach((m) => {
+      const date = String(m.created_at || m.date || nowString()).slice(0, 10);
+      const year = date.slice(0, 4) || financeYear;
+      const month = date.slice(5, 7) || "01";
+      if (String(year) !== String(financeYear)) return;
+      if (financeMonth !== "전체" && month !== financeMonth) return;
+      const key = `${year}-${month}`;
+      if (!monthly[key]) monthly[key] = { period: key, orderCount: 0, sales: 0, netSales: 0, productCost: 0, materialCost: 0, realProfit: 0 };
+      monthly[key].materialCost += toInt(m.amount || m.price || m.cost || 0);
+    });
+
+    return Object.values(monthly).sort((a, b) => a.period.localeCompare(b.period)).map((r) => ({
+      ...r,
+      realProfit: r.netSales - r.productCost - r.materialCost,
+    }));
+  }
+
+  function downloadFinanceExcel() {
+    const rows = financeRows();
+    if (rows.length === 0) return alert("다운로드할 매입매출 데이터가 없어요.");
+    const data = rows.map((r) => ({
+      기간: r.period,
+      주문수: r.orderCount,
+      총매출: r.sales,
+      실수령액: r.netSales,
+      상품매입가: r.productCost,
+      재료비: r.materialCost,
+      진짜순이익: r.realProfit,
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "매입매출현황");
+    XLSX.writeFile(wb, `매입매출현황_${financeYear}_${financeMonth}.xlsx`);
+  }
+
   function DashboardPage() {
     return (
       <>
@@ -2205,7 +2338,41 @@ export default function App() {
           <div className="card"><span>순이익</span><strong>{money(totalProfit)}</strong></div>
           <div className="card"><span>재료비</span><strong>{money(totalMaterials)}</strong></div>
         </section>
-        <section className="panel">
+        
+        <section className="panel dashboardTodoPanel">
+          <h2>오늘 일정표</h2>
+          <p className="statusLine">완료 체크한 할 일은 12시간 뒤 자동 삭제됩니다. 주문접수/재고임시차감 건은 자동으로 출고 할 일에 표시됩니다.</p>
+          <div className="filterRow">
+            <input
+              placeholder="할 일 직접 입력"
+              value={newTodoText}
+              onChange={(e) => setNewTodoText(e.target.value)}
+              onKeyDown={(e) => { if (!e.nativeEvent?.isComposing && e.key === "Enter") addTodoItem(newTodoText); }}
+            />
+            <button type="button" onClick={() => addTodoItem(newTodoText)}>할 일 추가</button>
+            <select value={quickTodo} onChange={(e) => { setQuickTodo(e.target.value); if (e.target.value) addTodoItem(e.target.value); }}>
+              <option value="">자주 하는 업무 추가</option>
+              <option value="매입정리">매입정리</option>
+              <option value="매출정리">매출정리</option>
+              <option value="창고정리">창고정리</option>
+              <option value="고객응대">고객응대</option>
+              <option value="영상업로드">영상업로드</option>
+              <option value="사입주문">사입주문</option>
+              <option value="주문포장">주문포장</option>
+            </select>
+          </div>
+          <div className="todoList">
+            {todoItems.length === 0 && <div className="empty">오늘 할 일이 없어요.</div>}
+            {todoItems.map((t) => (
+              <div key={t.id} className={`todoItem ${t.done ? "done" : ""}`}>
+                <label><input type="checkbox" checked={t.done} onChange={() => toggleTodoItem(t.id)} /><span>{t.text}</span></label>
+                <button type="button" onClick={() => deleteTodoItem(t.id)}>삭제</button>
+              </div>
+            ))}
+          </div>
+        </section>
+
+<section className="panel">
           <h2>재료비 관리</h2>
           <div className="filterRow">
             <label>재료비명</label><input value={materialName} onChange={(e) => setMaterialName(e.target.value)} />
@@ -2543,6 +2710,65 @@ export default function App() {
     v59ClearBulkProducts();
     getProducts();
     getOrderItems();
+  }
+
+
+  function FinanceReportPage() {
+    const rows = financeRows();
+    const totals = rows.reduce((acc, r) => {
+      acc.orderCount += r.orderCount;
+      acc.sales += r.sales;
+      acc.netSales += r.netSales;
+      acc.productCost += r.productCost;
+      acc.materialCost += r.materialCost;
+      acc.realProfit += r.realProfit;
+      return acc;
+    }, { orderCount: 0, sales: 0, netSales: 0, productCost: 0, materialCost: 0, realProfit: 0 });
+
+    return (
+      <>
+        <section className="panel financeReportPage">
+          <h2>매입매출현황</h2>
+          <p className="statusLine">월별 매출/실수령액/상품매입가/재료비/진짜 순이익을 정리합니다. 세금신고 전에는 증빙자료와 홈택스 자료를 함께 확인해주세요.</p>
+          <div className="filterRow">
+            <label>연도</label>
+            <select value={financeYear} onChange={(e) => setFinanceYear(e.target.value)}>
+              {financeYears.map((y) => <option key={y} value={y}>{y}</option>)}
+            </select>
+            <label>월</label>
+            <select value={financeMonth} onChange={(e) => setFinanceMonth(e.target.value)}>
+              <option value="전체">전체</option>
+              {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0")).map((m) => <option key={m} value={m}>{m}월</option>)}
+            </select>
+            <button type="button" onClick={downloadFinanceExcel}>엑셀 다운로드</button>
+          </div>
+          <div className="summaryGrid financeSummary">
+            <div><b>주문수</b><span>{totals.orderCount.toLocaleString()}건</span></div>
+            <div><b>총매출</b><span>{money(totals.sales)}</span></div>
+            <div><b>실수령액</b><span>{money(totals.netSales)}</span></div>
+            <div><b>상품매입가</b><span>{money(totals.productCost)}</span></div>
+            <div><b>재료비</b><span>{money(totals.materialCost)}</span></div>
+            <div><b>진짜 순이익</b><span>{money(totals.realProfit)}</span></div>
+          </div>
+        </section>
+        <section className="panel financeTablePanel">
+          <h3>월별 현황표</h3>
+          <div className="tableWrap">
+            <table>
+              <thead><tr><th>기간</th><th>주문수</th><th>총매출</th><th>실수령액</th><th>상품매입가</th><th>재료비</th><th>진짜 순이익</th></tr></thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.period}>
+                    <td>{r.period}</td><td>{r.orderCount}</td><td>{money(r.sales)}</td><td>{money(r.netSales)}</td><td>{money(r.productCost)}</td><td>{money(r.materialCost)}</td><td>{money(r.realProfit)}</td>
+                  </tr>
+                ))}
+                {rows.length === 0 && <tr><td colSpan="7" className="empty">해당 기간 데이터가 없어요.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </>
+    );
   }
 
   function InventoryPage() {
@@ -3498,9 +3724,9 @@ export default function App() {
   function renderPage() {
     try {
       if (activeTab === "대시보드") return DashboardPage();
+      if (activeTab === "매입매출현황") return FinanceReportPage();
       if (activeTab === "재고관리") return InventoryPage();
       if (activeTab === "수동박스") return ComposePage();
-      if (activeTab === "랜덤스쿱") return ScoopPage();
       if (activeTab === "주문관리") return OrdersPage();
       if (activeTab === "택배접수") return ShippingRegisterPage();
       if (activeTab === "취소보관함") return TrashPage();

@@ -2146,3 +2146,16 @@ button.savedGroupDeleteBtn {
     min-height: 300px !important;
   }
 }
+
+
+/* v69: 매입매출현황 / 오늘 일정표 / 순이익 재료비 반영 */
+.dashboardTodoPanel { margin-top: 12px !important; }
+.todoList { display: grid; gap: 4px; margin-top: 8px; }
+.todoItem { display: flex; justify-content: space-between; align-items: center; gap: 8px; border: 1px solid #d6c15c; background: #fffdf2; padding: 5px 8px; }
+.todoItem label { display: flex; align-items: center; gap: 6px; flex: 1; }
+.todoItem.done span { text-decoration: line-through; color: #777; }
+.financeSummary { grid-template-columns: repeat(6, minmax(130px, 1fr)) !important; }
+.financeSummary div { background: #fff8d8; border: 1px solid #d6c15c; padding: 10px; }
+.financeSummary span { display: block; font-size: 18px; font-weight: 900; margin-top: 4px; }
+.financeTablePanel .tableWrap { max-height: 520px !important; overflow: auto !important; background: #fff !important; }
+@media (max-width: 900px) { .financeSummary { grid-template-columns: repeat(2, minmax(130px, 1fr)) !important; } }
